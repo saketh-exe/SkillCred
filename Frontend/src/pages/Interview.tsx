@@ -1,4 +1,4 @@
-import React from 'react'
+import {} from 'react'
 import type { Api } from '../hooks/useApi'
 
 export default function InterviewPage({ api }: { api: Api }) {

@@ -1,1 +1,114 @@
 @import "tailwindcss";
+
+@theme {
+  --color-bg-base: #F4F3F0;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #FAFAF8;
+  --color-bg-overlay: #1C1C1E;
+
+  --color-border-subtle: #E8E6E1;
+  --color-border-default: #D1CEC7;
+  --color-border-strong: #A8A39A;
+
+  --color-text-primary: #18181A;
+  --color-text-secondary: #52504D;
+  --color-text-tertiary: #9B9791;
+  --color-text-inverse: #FFFFFF;
+
+  --color-accent: #2B5CE6;
+  --color-accent-hover: #1E4ED8;
+  --color-accent-subtle: #EBF0FD;
+  --color-accent-text: #1D3FAA;
+
+  --color-success: #16A34A;
+  --color-success-subtle: #F0FDF4;
+  --color-warning: #B45309;
+  --color-warning-subtle: #FFFBEB;
+  --color-danger: #DC2626;
+  --color-danger-subtle: #FEF2F2;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --font-heading: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+  --bg-base: #F4F3F0;
+  --bg-surface: #FFFFFF;
+  --bg-elevated: #FAFAF8;
+  --bg-overlay: #1C1C1E;
+  --border-subtle: #E8E6E1;
+  --border-default: #D1CEC7;
+  --border-strong: #A8A39A;
+  --text-primary: #18181A;
+  --text-secondary: #52504D;
+  --text-tertiary: #9B9791;
+  --text-inverse: #FFFFFF;
+  --accent: #2B5CE6;
+  --accent-hover: #1E4ED8;
+  --accent-subtle: #EBF0FD;
+  --accent-text: #1D3FAA;
+  --success: #16A34A;
+  --success-subtle: #F0FDF4;
+  --warning: #B45309;
+  --warning-subtle: #FFFBEB;
+  --danger: #DC2626;
+  --danger-subtle: #FEF2F2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background-color: var(--bg-elevated);
+  border-radius: var(--radius-sm, 6px);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-elevated);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
