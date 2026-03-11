@@ -1,0 +1,65 @@
+{
+  "success": true,
+  "data": {
+    "candidateName": "John Doe",
+    "date": "2026-03-11T12:00:00.000Z",
+    "skills": [
+      {
+        "skill": "SQL",
+        "totalQuestions": 3,
+        "questions": [
+          {
+            "id": "sql_001",
+            "skill": "SQL",
+            "question": "Which index type is most efficient for range queries?",
+            "options": ["Hash", "B-Tree", "Bitmap", "Clustered"],
+            "difficulty": "intermediate"
+          },
+          {
+            "id": "sql_003",
+            "skill": "SQL",
+            "question": "What is a foreign key used for?",
+            "options": ["To filter data", "To establish relationships between tables", "To uniquely identify records", "To sort data"],
+            "difficulty": "beginner"
+          },
+          {
+            "id": "sql_004",
+            "skill": "SQL",
+            "question": "What is the primary goal of database normalization?",
+            "options": ["To reduce table size", "To reduce data redundancy and improve data integrity", "To increase query speed", "To simplify table names"],
+            "difficulty": "intermediate"
+          }
+        ]
+      },
+      {
+        "skill": "JavaScript",
+        "totalQuestions": 3,
+        "questions": [
+          {
+            "id": "js_001",
+            "skill": "JavaScript",
+            "question": "What is a closure in JavaScript and why is it useful?",
+            "options": ["An error handling mechanism", "A function that closes the program", "A function that retains access to variables from its outer scope even after the outer function returns", "A loop that terminates"],
+            "difficulty": "intermediate"
+          }
+        ]
+      }
+    ],
+    "totalQuestionsGenerated": 6,
+    "answerKey": [
+      {
+        "questionId": "sql_001",
+        "skill": "SQL",
+        "correctAnswer": "B-Tree",
+        "explanation": "B-Tree indexes are ideal for range queries as they maintain a sorted order of values and support efficient range scans."
+      },
+      {
+        "questionId": "sql_003",
+        "skill": "SQL",
+        "correctAnswer": "To establish relationships between tables",
+        "explanation": "A foreign key is a column or set of columns that establish a link between two tables in a relational database."
+      }
+    ]
+  },
+  "message": "Generated 6 questions for 4 skill(s)"
+}

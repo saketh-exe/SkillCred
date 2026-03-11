@@ -14,6 +14,7 @@ const upload = multer({
 
 router.post("/", upload.single("resume"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No PDF file received" });
+  console.log(`Received resume: ${req.file.originalname} (${req.file.size} bytes)`);
   res.json({ message: `Resume received: ${req.file.originalname} (${req.file.size} bytes)` });
 });
 

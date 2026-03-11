@@ -1,0 +1,6 @@
+{
+  "candidateName": "John Doe",
+  "skills": ["SQL", "JavaScript", "React", "Node.js"],
+  "numQuestionsPerSkill": 3,
+  "technologies": ["Express.js", "MongoDB"]
+}
