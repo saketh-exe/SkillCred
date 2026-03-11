@@ -1,26 +1,45 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Briefcase, FileText, TrendingUp, ArrowRight, Sparkles } from 'lucide-react';
+import { BadgeCheck, Briefcase, FileText, TrendingUp, ArrowRight, Sparkles, ShieldCheck } from 'lucide-react';
 import { StatCard, Card, Badge, Button, ProgressBar } from '../../components/ui';
 import NotificationDropdown from '../../components/ui/NotificationDropdown';
 import PageTransition from '../../components/PageTransition';
 import { studentService } from '../../services/studentService';
 import { useAuth } from '../../context/AuthContext';
-import type { Skill, JobMatch, Notification } from '../../types';
+import { useProfileData } from '../../context/ProfileDataContext';
+import type { Skill, JobMatch, Notification, Application, SkillGap } from '../../types';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const { resume, credibility, githubAnalysis } = useProfileData();
   const [skills, setSkills] = useState<Skill[]>([]);
   const [jobs, setJobs] = useState<JobMatch[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [skillGaps, setSkillGaps] = useState<SkillGap[]>([]);
 
   useEffect(() => {
     studentService.getSkills().then(setSkills);
     studentService.getJobs().then(setJobs);
     studentService.getNotifications().then(setNotifications);
+    studentService.getApplications().then(setApplications);
+    studentService.getSkillGaps().then(setSkillGaps);
   }, []);
 
   const verifiedCount = skills.filter(s => s.status === 'Verified').length;
+  const resumeSkillCount = resume?.skills?.length ?? 0;
+  const credibilityScore = credibility?.overallScore ?? null;
+
+  // Use credibility score if available, else fall back to first skill gap match percent
+  const readinessValue = credibilityScore ?? skillGaps[0]?.matchPercent ?? null;
+  const readinessLabel = credibilityScore !== null
+    ? 'Credibility Score'
+    : (skillGaps[0]?.targetRole ? `${skillGaps[0].targetRole} Readiness` : 'Readiness');
+
+  // Skill gap: use credibility strengths/recommendations if available, else mock skill gap
+  const gap = skillGaps[0];
+  const strengths = credibility?.strengths?.slice(0, 3) ?? gap?.strengths?.slice(0, 3) ?? [];
+  const missing = credibility?.recommendations?.slice(0, 3) ?? gap?.missing?.slice(0, 3).map(m => m.name) ?? [];
 
   return (
     <PageTransition>
@@ -37,10 +56,10 @@ export default function StudentDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
-        <StatCard icon={<BadgeCheck size={20} />} value={verifiedCount} label="Verified Skills" trend={{ delta: '+2 this month', up: true }} />
+        <StatCard icon={<BadgeCheck size={20} />} value={resumeSkillCount || verifiedCount} label={resumeSkillCount ? 'Skills Identified' : 'Verified Skills'} trend={resumeSkillCount ? { delta: 'from resume', up: true } : { delta: '+2 this month', up: true }} />
         <StatCard icon={<Briefcase size={20} />} value={jobs.length} label="Job Matches" trend={{ delta: '+3 new', up: true }} />
-        <StatCard icon={<FileText size={20} />} value={3} label="Applications Sent" />
-        <StatCard icon={<TrendingUp size={20} />} value="78%" label="Avg. Readiness Score" />
+        <StatCard icon={<FileText size={20} />} value={applications.length} label="Applications Sent" />
+        <StatCard icon={credibilityScore !== null ? <ShieldCheck size={20} /> : <TrendingUp size={20} />} value={readinessValue !== null ? `${readinessValue}%` : '—'} label={credibilityScore !== null ? 'Credibility Score' : 'Readiness Score'} />
       </div>
 
       {/* Readiness ring + recommended jobs */}
@@ -54,15 +73,15 @@ export default function StudentDashboard() {
               <circle
                 cx="70" cy="70" r="60" fill="none"
                 stroke="var(--green)" strokeWidth="10" strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 60 * 0.78} ${2 * Math.PI * 60 * 0.22}`}
+                strokeDasharray={`${2 * Math.PI * 60 * (readinessValue ?? 0) / 100} ${2 * Math.PI * 60 * (1 - (readinessValue ?? 0) / 100)}`}
                 transform="rotate(-90 70 70)"
                 className="transition-all duration-1000"
               />
-              <text x="70" y="62" textAnchor="middle" className="fill-[var(--text-primary)]" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 36 }}>78%</text>
-              <text x="70" y="84" textAnchor="middle" className="fill-[var(--text-tertiary)]" style={{ fontSize: 11 }}>Readiness</text>
+              <text x="70" y="62" textAnchor="middle" className="fill-[var(--text-primary)]" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 36 }}>{readinessValue !== null ? `${readinessValue}%` : '—'}</text>
+              <text x="70" y="84" textAnchor="middle" className="fill-[var(--text-tertiary)]" style={{ fontSize: 11 }}>{credibilityScore !== null ? 'Credibility' : 'Readiness'}</text>
             </svg>
           </div>
-          <p className="relative text-[13px] text-[var(--text-secondary)] mt-3 font-medium">Backend Developer Readiness</p>
+          <p className="relative text-[13px] text-[var(--text-secondary)] mt-3 font-medium">{readinessLabel}</p>
         </Card>
 
         {/* Recommended Jobs */}
@@ -131,24 +150,24 @@ export default function StudentDashboard() {
         {/* Skill Gap Summary */}
         <Card className="p-6">
           <h2 className="text-[15px] font-semibold mb-4">Skill Gap Summary</h2>
-          <p className="text-sm text-[var(--text-secondary)] mb-1">Target Role: <span className="font-medium text-[var(--text-primary)]">Backend Developer</span></p>
-          <ProgressBar value={68} className="mb-4" />
+          <p className="text-sm text-[var(--text-secondary)] mb-1">Target Role: <span className="font-medium text-[var(--text-primary)]">{gap?.targetRole ?? user?.role === 'student' ? (user as any)?.targetRoles?.[0] ?? 'N/A' : 'N/A'}</span></p>
+          <ProgressBar value={readinessValue ?? 0} className="mb-4" />
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Strengths</p>
-              {['Python', 'REST APIs', 'SQL'].map(s => (
+              {strengths.length > 0 ? strengths.map(s => (
                 <div key={s} className="flex items-center gap-2 mb-1.5 text-[var(--green)]">
-                  <span className="text-xs">✓</span><span>{s}</span>
+                  <span className="text-xs">✓</span><span className="truncate">{s}</span>
                 </div>
-              ))}
+              )) : <p className="text-[var(--text-tertiary)] text-[12px]">Upload resume to see strengths</p>}
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Missing</p>
-              {['Docker', 'Caching', 'CI/CD'].map(s => (
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">{credibilityScore !== null ? 'Recommendations' : 'Missing'}</p>
+              {missing.length > 0 ? missing.map(s => (
                 <div key={s} className="flex items-center gap-2 mb-1.5 text-[var(--amber)]">
-                  <span className="text-xs">!</span><span>{s}</span>
+                  <span className="text-xs">!</span><span className="truncate">{s}</span>
                 </div>
-              ))}
+              )) : <p className="text-[var(--text-tertiary)] text-[12px]">No gaps identified</p>}
             </div>
           </div>
           <Link to="/student/gap-analysis" className="mt-4 inline-flex items-center gap-1 text-[13px] text-[var(--accent)] font-medium hover:underline">

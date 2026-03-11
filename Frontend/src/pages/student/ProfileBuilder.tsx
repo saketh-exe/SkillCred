@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Card, Badge, Button, ProgressBar } from '../../components/ui';
 import PageTransition from '../../components/PageTransition';
+import { useProfileData } from '../../context/ProfileDataContext';
 import type {
   GithubAnalysis, GithubRepoProfile, GithubCommitSummary, GithubCommitFile,
   ParsedResume, CredibilityReport,
@@ -221,6 +222,7 @@ type Tab = 'upload' | 'resume' | 'github' | 'credibility';
 
 export default function ProfileBuilder() {
   const fileRef = useRef<HTMLInputElement>(null);
+  const profileData = useProfileData();
   const [tab, setTab] = useState<Tab>('upload');
 
   // Upload state
@@ -270,6 +272,7 @@ export default function ProfileBuilder() {
         }
         parsedResume = await res.json();
         setResume(parsedResume);
+        profileData.setResume(parsedResume);
       }
 
       // Resolve GitHub username: explicit input > resume-extracted
@@ -285,6 +288,7 @@ export default function ProfileBuilder() {
         }
         const ghData: GithubAnalysis = await res.json();
         setGithubAnalysis(ghData);
+        profileData.setGithubAnalysis(ghData);
 
         // Step 3: Credibility report (needs both resume + GitHub)
         if (parsedResume) {
@@ -296,7 +300,9 @@ export default function ProfileBuilder() {
           });
           if (credRes.ok) {
             const credData = await credRes.json();
-            setCredibility(credData.credibilityReport ?? null);
+            const credReport = credData.credibilityReport ?? null;
+            setCredibility(credReport);
+            profileData.setCredibility(credReport);
           }
         }
       }
