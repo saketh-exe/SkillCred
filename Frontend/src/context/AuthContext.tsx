@@ -1,54 +1,86 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { Role, StudentUser, RecruiterUser } from '../types';
+
+const API_BASE = '/api/auth';
+const TOKEN_KEY = 'skillcred_token';
 
 interface AuthState {
   user: (StudentUser | RecruiterUser) | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (email: string, password: string, role: Role) => Promise<void>;
-  signupStudent: (data: Omit<StudentUser, 'id' | 'role' | 'profileVisible'>) => Promise<void>;
-  signupRecruiter: (data: Omit<RecruiterUser, 'id' | 'role'>) => Promise<void>;
+  signupStudent: (data: Omit<StudentUser, 'id' | 'role' | 'profileVisible'> & { password: string }) => Promise<void>;
+  signupRecruiter: (data: Omit<RecruiterUser, 'id' | 'role'> & { password: string }) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-const mockStudentUser: StudentUser = {
-  id: 's1', name: 'Alex Johnson', email: 'alex@university.edu', role: 'student',
-  university: 'Stanford University', degree: 'B.S. Computer Science', graduationYear: 2026,
-  skills: ['Python', 'JavaScript', 'TypeScript', 'React', 'SQL', 'Node.js', 'REST APIs'],
-  targetRoles: ['Backend Developer', 'Full Stack Developer'],
-  experienceLevel: 'Intermediate', profileVisible: true,
-};
+function normalizeUser(raw: Record<string, unknown>): StudentUser | RecruiterUser {
+  // MongoDB returns _id, map it to id
+  return { ...raw, id: (raw._id as string) ?? (raw.id as string) } as StudentUser | RecruiterUser;
+}
 
-const mockRecruiterUser: RecruiterUser = {
-  id: 'r1', name: 'Sarah Chen', email: 'sarah@techcorp.com', role: 'recruiter',
-  companyName: 'TechCorp', industry: 'Technology', companySize: '201-1000',
-  hiringDomains: ['Engineering', 'Data', 'Product'],
-  companyDescription: 'Leading technology company building next-generation developer tools.',
-};
+async function apiFetch<T>(path: string, options: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? 'Request failed');
+  return data as T;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<(StudentUser | RecruiterUser) | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = useCallback(async (_email: string, _password: string, role: Role) => {
-    await new Promise(r => setTimeout(r, 500));
-    setUser(role === 'student' ? mockStudentUser : mockRecruiterUser);
+  // Restore session from stored token on mount
+  useEffect(() => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) { setLoading(false); return; }
+    apiFetch<{ user: Record<string, unknown> }>('/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(({ user: u }) => setUser(normalizeUser(u)))
+      .catch(() => localStorage.removeItem(TOKEN_KEY))
+      .finally(() => setLoading(false));
   }, []);
 
-  const signupStudent = useCallback(async (data: Omit<StudentUser, 'id' | 'role' | 'profileVisible'>) => {
-    await new Promise(r => setTimeout(r, 500));
-    setUser({ ...data, id: 's-new', role: 'student', profileVisible: true });
+  const login = useCallback(async (email: string, password: string, _role: Role) => {
+    const { token, user: u } = await apiFetch<{ token: string; user: Record<string, unknown> }>('/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    localStorage.setItem(TOKEN_KEY, token);
+    setUser(normalizeUser(u));
   }, []);
 
-  const signupRecruiter = useCallback(async (data: Omit<RecruiterUser, 'id' | 'role'>) => {
-    await new Promise(r => setTimeout(r, 500));
-    setUser({ ...data, id: 'r-new', role: 'recruiter' });
+  const signupStudent = useCallback(async (data: Omit<StudentUser, 'id' | 'role' | 'profileVisible'> & { password: string }) => {
+    const { token, user: u } = await apiFetch<{ token: string; user: Record<string, unknown> }>('/signup/student', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    localStorage.setItem(TOKEN_KEY, token);
+    setUser(normalizeUser(u));
   }, []);
 
-  const logout = useCallback(() => setUser(null), []);
+  const signupRecruiter = useCallback(async (data: Omit<RecruiterUser, 'id' | 'role'> & { password: string }) => {
+    const { token, user: u } = await apiFetch<{ token: string; user: Record<string, unknown> }>('/signup/recruiter', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    localStorage.setItem(TOKEN_KEY, token);
+    setUser(normalizeUser(u));
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem(TOKEN_KEY);
+    setUser(null);
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, signupStudent, signupRecruiter, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, signupStudent, signupRecruiter, logout }}>
       {children}
     </AuthContext.Provider>
   );

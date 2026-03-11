@@ -23,8 +23,24 @@ export default function JobMatches() {
       return j.title.toLowerCase().includes(q) || j.company.toLowerCase().includes(q);
     });
 
-  const handleApply = (job: JobMatch) => {
-    addToast(`Applied to ${job.title} at ${job.company}!`, 'success');
+  const [applying, setApplying] = useState<string | null>(null);
+
+  const handleApply = async (job: JobMatch) => {
+    if (applying) return;
+    setApplying(job.jobId);
+    try {
+      await studentService.applyToJob(job.jobId);
+      addToast(`Applied to ${job.title} at ${job.company}!`, 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to apply';
+      if (msg.toLowerCase().includes('already')) {
+        addToast(`Already applied to ${job.title}`, 'info');
+      } else {
+        addToast(msg, 'error');
+      }
+    } finally {
+      setApplying(null);
+    }
   };
 
   return (
@@ -53,6 +69,7 @@ export default function JobMatches() {
             onChange={e => setMinMatch(Number(e.target.value))}
             className="h-[38px] px-2 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm"
           >
+            <option value={0}>0%+</option>
             <option value={50}>50%+</option>
             <option value={70}>70%+</option>
             <option value={90}>90%+</option>
@@ -65,8 +82,8 @@ export default function JobMatches() {
         <div className="flex-1 space-y-3">
           {filtered.length === 0 && (
             <Card className="p-10 text-center">
-              <p className="text-[var(--text-tertiary)] mb-2">No jobs match your filters.</p>
-              <Button variant="ghost" onClick={() => { setSearch(''); setMinMatch(50); }}>Reset Filters</Button>
+              <p className="text-(--text-tertiary) mb-2">No jobs match your filters.</p>
+              <Button variant="ghost" onClick={() => { setSearch(''); setMinMatch(0); }}>Reset Filters</Button>
             </Card>
           )}
           {filtered.map(job => (
@@ -100,7 +117,7 @@ export default function JobMatches() {
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" className="flex-1 text-xs h-8" onClick={e => { e.stopPropagation(); setSelectedJob(job); }}>View Details</Button>
-                <Button className="flex-1 text-xs h-8" onClick={e => { e.stopPropagation(); handleApply(job); }}>Apply Now</Button>
+                <Button className="flex-1 text-xs h-8" disabled={applying === job.jobId} onClick={e => { e.stopPropagation(); handleApply(job); }}>{applying === job.jobId ? 'Applying…' : 'Apply Now'}</Button>
               </div>
             </Card>
           ))}
@@ -138,7 +155,7 @@ export default function JobMatches() {
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Readiness Score</p>
                 <ProgressBar value={selectedJob.readinessPercent} />
               </div>
-              <Button className="w-full" onClick={() => handleApply(selectedJob)}>Apply Now</Button>
+              <Button className="w-full" disabled={applying === selectedJob.jobId} onClick={() => handleApply(selectedJob)}>{applying === selectedJob.jobId ? 'Applying…' : 'Apply Now'}</Button>
             </Card>
           </div>
         )}

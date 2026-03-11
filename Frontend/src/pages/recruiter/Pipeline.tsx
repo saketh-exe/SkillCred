@@ -33,7 +33,8 @@ export default function Pipeline() {
     });
   }, [selectedJob]);
 
-  const moveCandidate = (candidateId: string, fromStage: string, toStage: string) => {
+  const moveCandidate = async (candidateId: string, fromStage: string, toStage: string) => {
+    // Optimistic UI update
     setColumns(prev => {
       const updated = prev.map(s => ({ ...s, candidates: [...s.candidates] }));
       const from = updated.find(s => s.id === fromStage);
@@ -45,7 +46,20 @@ export default function Pipeline() {
       to.candidates.push({ ...candidate, stageId: toStage });
       return updated;
     });
-    addToast('Candidate moved', 'success');
+    try {
+      await recruiterService.moveCandidate(selectedJob, candidateId, toStage);
+      addToast('Candidate moved', 'success');
+    } catch {
+      addToast('Failed to move candidate', 'error');
+      // Reload pipeline to restore correct state
+      recruiterService.getPipeline(selectedJob).then(data => {
+        const cols: StageWithCandidates[] = data.stages.map(s => ({
+          ...s,
+          candidates: data.candidates.filter(c => c.stageId === s.id),
+        }));
+        setColumns(cols);
+      }).catch(() => {/* ignore reload failure */});
+    }
   };
 
   const stageColor = (type: string) => {

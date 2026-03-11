@@ -1,7 +1,5 @@
 import type { QuizQuestion, AssessmentResult } from '../types';
-
-const delay = <T>(data: T, ms = 300): Promise<T> =>
-  new Promise(resolve => setTimeout(() => resolve(data), ms));
+import { studentService } from './studentService';
 
 const questionBank: Record<string, QuizQuestion[]> = {
   SQL: [
@@ -45,10 +43,10 @@ const defaultQuestions: QuizQuestion[] = [
 export const assessmentService = {
   getQuestions: (skill: string): Promise<QuizQuestion[]> => {
     const questions = questionBank[skill] ?? defaultQuestions;
-    return delay(questions, 200);
+    return Promise.resolve(questions);
   },
 
-  submitAssessment: (
+  submitAssessment: async (
     skillId: string,
     skillName: string,
     answers: number[],
@@ -60,13 +58,21 @@ export const assessmentService = {
       correct: q.correctIndex,
     }));
     const score = detailed.filter(a => a.selected === a.correct).length;
-    return delay({
+    const passed = score / questions.length >= 0.7;
+
+    // Persist result to backend
+    await studentService.updateSkill(skillId, {
+      score: Math.round((score / questions.length) * 100),
+      status: passed ? 'Verified' : 'In Progress',
+    }).catch(() => { /* non-fatal: result still returned */ });
+
+    return {
       skillId,
       skillName,
       score,
       total: questions.length,
-      passed: score / questions.length >= 0.7,
+      passed,
       answers: detailed,
-    }, 500);
+    };
   },
 };

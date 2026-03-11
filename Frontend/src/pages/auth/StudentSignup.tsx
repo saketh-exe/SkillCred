@@ -62,9 +62,14 @@ export default function StudentSignup() {
 
   const handleComplete = async () => {
     setLoading(true);
-    await signupStudent({ name, email, avatarUrl: undefined, university, degree, graduationYear: gradYear, skills, targetRoles, experienceLevel: experience });
-    setLoading(false);
-    nav('/student/dashboard');
+    try {
+      await signupStudent({ name, email, password, avatarUrl: undefined, university, degree, graduationYear: gradYear, skills, targetRoles, experienceLevel: experience });
+      nav('/student/dashboard');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass = 'w-full h-[42px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] transition-all';

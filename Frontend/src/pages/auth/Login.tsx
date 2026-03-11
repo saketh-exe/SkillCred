@@ -17,16 +17,21 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    await login(email, password, role);
-    setLoading(false);
-    nav(role === 'student' ? '/student/dashboard' : '/recruiter/dashboard');
+    try {
+      await login(email, password, role);
+      nav(role === 'student' ? '/student/dashboard' : '/recruiter/dashboard');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4 page-bg noise">
+      <div className="min-h-screen bg-(--bg-base) flex items-center justify-center px-4 page-bg noise">
         <div className="w-full max-w-md animate-scaleIn">
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] shadow-[var(--shadow-xl)] p-8 relative overflow-hidden">
+          <div className="bg-(--bg-surface) border border-(--border-subtle) rounded-xl shadow-[var(--shadow-xl)] p-8 relative overflow-hidden">
             {/* Decorative gradient */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--accent)] rounded-full opacity-[0.04] -translate-y-1/2 translate-x-1/2 blur-2xl" />
 

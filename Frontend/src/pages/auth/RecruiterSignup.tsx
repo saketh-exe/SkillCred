@@ -32,9 +32,14 @@ export default function RecruiterSignup() {
 
   const handleComplete = async () => {
     setLoading(true);
-    await signupRecruiter({ name, email, avatarUrl: undefined, companyName, industry, companySize, hiringDomains, companyDescription: description });
-    setLoading(false);
-    nav('/recruiter/dashboard');
+    try {
+      await signupRecruiter({ name, email, password, avatarUrl: undefined, companyName, industry, companySize, hiringDomains, companyDescription: description });
+      nav('/recruiter/dashboard');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputClass = 'w-full h-[42px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] transition-all';

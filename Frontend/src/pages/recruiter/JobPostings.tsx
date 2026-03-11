@@ -43,10 +43,35 @@ export default function JobPostings() {
   };
   const removeStage = (id: string) => setPipeline(prev => prev.filter(s => s.id !== id));
 
-  const handlePublish = () => {
-    addToast('Job posting published successfully!', 'success');
-    setShowCreate(false);
-    setCreateStep(1);
+  const resetForm = () => {
+    setTitle(''); setDepartment(''); setLocation(''); setWorkMode('Hybrid');
+    setEmpType('Full-time'); setExpLevel('Intermediate'); setSalary('');
+    setDescription(''); setReqSkills([]); setPipeline([]);
+  };
+
+  const handlePublish = async () => {
+    try {
+      const newJob = await recruiterService.createJob({
+        title, department, location, workMode,
+        employmentType: empType,
+        experienceLevel: expLevel,
+        salaryRange: salary || undefined,
+        description,
+        requiredSkills: reqSkills,
+        pipeline,
+        status: 'Active',
+        applicantCount: 0,
+        inPipelineCount: 0,
+        topMatchPercent: 0,
+      });
+      setJobs(prev => [newJob, ...prev]);
+      addToast('Job posting published successfully!', 'success');
+      setShowCreate(false);
+      setCreateStep(1);
+      resetForm();
+    } catch {
+      addToast('Failed to create job posting. Please try again.', 'error');
+    }
   };
 
   const inputClass = 'w-full h-[38px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)]';
@@ -95,7 +120,7 @@ export default function JobPostings() {
       </Card>
 
       {/* Create Job Modal */}
-      <Modal open={showCreate} onClose={() => { setShowCreate(false); setCreateStep(1); }} title="Create Job Posting" size="xl">
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); setCreateStep(1); resetForm(); }} title="Create Job Posting" size="xl">
         {/* Step indicator */}
         <div className="flex items-center justify-center gap-2 mb-6">
           {[1, 2, 3, 4].map(s => (
