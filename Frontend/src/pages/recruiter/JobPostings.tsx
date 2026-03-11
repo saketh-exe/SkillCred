@@ -57,7 +57,7 @@ export default function JobPostings() {
     <PageTransition>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[24px] font-bold">Job Postings</h1>
+          <h1 className="font-display text-[32px] tracking-tight">Job Postings</h1>
           <p className="text-[13px] text-[var(--text-secondary)] mt-1">Manage your open positions and attract verified talent.</p>
         </div>
         <Button onClick={() => setShowCreate(true)}><Plus size={16} /> Create Job Posting</Button>

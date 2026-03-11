@@ -50,17 +50,18 @@ export default function StudentProfile() {
   return (
     <PageTransition>
       {/* Header */}
-      <Card className="p-6 mb-6">
-        <div className="flex items-center gap-5">
+      <Card className="p-6 mb-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-[var(--accent-subtle)] to-transparent opacity-40" />
+        <div className="relative flex items-center gap-5">
           <Avatar name={student.name} size={64} />
           <div className="flex-1">
-            <h1 className="text-xl font-semibold">{student.name}</h1>
+            <h1 className="font-display text-[28px] tracking-tight">{student.name}</h1>
             <p className="text-[13px] text-[var(--text-secondary)]">{student.university} · {student.degree} · Class of {student.graduationYear}</p>
-            <div className="flex flex-wrap gap-1 mt-2">
+            <div className="flex flex-wrap gap-1.5 mt-2">
               {student.targetRoles.map(r => <Badge key={r} variant="accent">{r}</Badge>)}
             </div>
           </div>
-          <Button variant="secondary">Edit Profile</Button>
+          <Button variant="outline">Edit Profile</Button>
         </div>
       </Card>
 
@@ -95,7 +96,7 @@ export default function StudentProfile() {
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {projects.map(p => (
-                <div key={p.id} className="p-4 bg-[var(--bg-elevated)] rounded-[var(--radius-sm)] border border-[var(--border-subtle)]">
+                <div key={p.id} className="p-4 bg-[var(--bg-elevated)] rounded-xl border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all duration-200">
                   <p className="text-[15px] font-semibold mb-1">{p.title}</p>
                   <p className="text-[13px] text-[var(--text-secondary)] mb-2">{p.description}</p>
                   <div className="flex flex-wrap gap-1 mb-2">
@@ -112,9 +113,9 @@ export default function StudentProfile() {
         <Card className="p-6">
           <h2 className="text-[15px] font-semibold mb-4">Stats Summary</h2>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Total Verifications</span><span className="font-[var(--font-mono)] font-medium">{verifiedSkills.length}</span></div>
-            <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Applications</span><span className="font-[var(--font-mono)] font-medium">3</span></div>
-            <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Readiness</span><span className="font-[var(--font-mono)] font-medium text-[var(--success)]">78%</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Total Verifications</span><span className="font-mono font-medium">{verifiedSkills.length}</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Applications</span><span className="font-mono font-medium">3</span></div>
+            <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Avg Readiness</span><span className="font-mono font-medium text-[var(--green)]">78%</span></div>
           </div>
         </Card>
 

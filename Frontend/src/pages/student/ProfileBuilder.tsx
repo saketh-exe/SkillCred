@@ -313,7 +313,6 @@ export default function ProfileBuilder() {
     }
   }, [file, githubUsername]);
 
-  const hasResults = !!(resume || githubAnalysis || credibility);
   const visibleRepos = showAllRepos ? githubAnalysis?.repositories ?? [] : (githubAnalysis?.repositories ?? []).slice(0, 6);
   const topLangs = (githubAnalysis?.languages ?? []).slice(0, 8);
   const maxLangBytes = topLangs[0]?.bytes ?? 1;

@@ -21,7 +21,7 @@ export default function Compare() {
   return (
     <PageTransition>
       <div className="mb-6">
-        <h1 className="text-[24px] font-bold">Compare Candidates</h1>
+        <h1 className="font-display text-[32px] tracking-tight">Compare Candidates</h1>
         <p className="text-[13px] text-[var(--text-secondary)] mt-1">Side-by-side comparison of up to 4 candidates.</p>
       </div>
 

@@ -18,22 +18,22 @@ export default function Sidebar({ items, header }: Props) {
 
   return (
     <aside
-      className={`sticky top-14 h-[calc(100vh-56px)] bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] flex flex-col flex-shrink-0 transition-all duration-200 ${
-        collapsed ? 'w-16' : 'w-[220px]'
+      className={`sticky top-14 h-[calc(100vh-56px)] bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] flex flex-col flex-shrink-0 transition-all duration-300 ${
+        collapsed ? 'w-16' : 'w-[230px]'
       }`}
     >
       {header && !collapsed && <div className="p-4 border-b border-[var(--border-subtle)]">{header}</div>}
-      <nav className="flex-1 py-2 overflow-y-auto">
+      <nav className="flex-1 py-3 px-2 overflow-y-auto space-y-0.5">
         {items.map(item => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to.endsWith('dashboard')}
             className={({ isActive }) =>
-              `flex items-center gap-3 h-9 mx-2 px-3 rounded-[var(--radius-sm)] text-[13px] font-medium transition-colors ${
+              `flex items-center gap-3 h-10 px-3 rounded-xl text-[13px] font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border-l-2 border-[var(--accent)]'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)]'
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] shadow-sm'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]'
               } ${collapsed ? 'justify-center px-0' : ''}`
             }
           >
@@ -44,7 +44,7 @@ export default function Sidebar({ items, header }: Props) {
       </nav>
       <button
         onClick={() => setCollapsed(c => !c)}
-        className="flex items-center justify-center h-10 border-t border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)] transition-colors"
+        className="flex items-center justify-center h-10 border-t border-[var(--border-subtle)] text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-secondary)] transition-all cursor-pointer"
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>

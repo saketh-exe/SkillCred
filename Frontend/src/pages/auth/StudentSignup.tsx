@@ -67,25 +67,27 @@ export default function StudentSignup() {
     nav('/student/dashboard');
   };
 
-  const inputClass = 'w-full h-[38px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] transition-all';
+  const inputClass = 'w-full h-[42px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] transition-all';
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4 py-12" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, var(--border-subtle) 1px, transparent 0)', backgroundSize: '24px 24px' }}>
-        <div className="w-full max-w-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] p-8">
-          <div className="text-center mb-6">
-            <h1 className="text-xl font-bold text-[var(--accent)] mb-1">SkillCred</h1>
-            <p className="text-sm text-[var(--text-secondary)]">Create your student account</p>
-          </div>
+      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4 py-12 page-bg noise">
+        <div className="w-full max-w-xl animate-scaleIn">
+          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] shadow-[var(--shadow-xl)] p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--accent)] rounded-full opacity-[0.03] -translate-y-1/2 translate-x-1/2 blur-2xl" />
+            <div className="relative text-center mb-6">
+              <h1 className="font-display text-[28px] text-[var(--text-primary)] mb-1">Create your account</h1>
+              <p className="text-[13px] text-[var(--text-secondary)]">Join SkillCred as a student</p>
+            </div>
 
           {/* Step indicator */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="relative flex items-center justify-center gap-2 mb-8">
             {[1, 2, 3].map(s => (
               <div key={s} className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold ${
-                  step >= s ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-tertiary)]'
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold transition-all duration-300 ${
+                  step >= s ? 'bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20' : 'bg-[var(--bg-elevated)] text-[var(--text-tertiary)]'
                 }`}>{s}</div>
-                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-[var(--accent)]' : 'bg-[var(--border-subtle)]'}`} />}
+                {s < 3 && <div className={`w-12 h-0.5 transition-colors ${step > s ? 'bg-[var(--accent)]' : 'bg-[var(--border-subtle)]'}`} />}
               </div>
             ))}
           </div>
@@ -229,8 +231,9 @@ export default function StudentSignup() {
 
           <p className="text-center text-[13px] text-[var(--text-tertiary)] mt-6">
             Already have an account?{' '}
-            <button onClick={() => nav('/auth/login')} className="text-[var(--accent)] font-medium hover:underline">Sign in</button>
+            <button onClick={() => nav('/auth/login')} className="text-[var(--accent)] font-medium hover:underline cursor-pointer">Sign in</button>
           </p>
+          </div>
         </div>
       </div>
     </PageTransition>

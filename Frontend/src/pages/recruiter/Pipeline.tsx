@@ -63,7 +63,7 @@ export default function Pipeline() {
     <PageTransition>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[24px] font-bold">Pipeline</h1>
+          <h1 className="font-display text-[32px] tracking-tight">Pipeline</h1>
           <p className="text-[13px] text-[var(--text-secondary)] mt-1">Track candidates through evaluation stages.</p>
         </div>
         <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)} className="h-[38px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm">

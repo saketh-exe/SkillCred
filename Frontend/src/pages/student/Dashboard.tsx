@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BadgeCheck, Briefcase, FileText, TrendingUp, ArrowRight } from 'lucide-react';
+import { BadgeCheck, Briefcase, FileText, TrendingUp, ArrowRight, Sparkles } from 'lucide-react';
 import { StatCard, Card, Badge, Button, ProgressBar } from '../../components/ui';
 import NotificationDropdown from '../../components/ui/NotificationDropdown';
 import PageTransition from '../../components/PageTransition';
@@ -27,7 +27,7 @@ export default function StudentDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-[24px] font-bold">Welcome back, {user?.name?.split(' ')[0] ?? 'Student'}</h1>
+          <h1 className="font-display text-[32px] tracking-tight">Welcome back, {user?.name?.split(' ')[0] ?? 'Student'}</h1>
           <p className="text-[13px] text-[var(--text-tertiary)] mt-1">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>
@@ -36,7 +36,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
         <StatCard icon={<BadgeCheck size={20} />} value={verifiedCount} label="Verified Skills" trend={{ delta: '+2 this month', up: true }} />
         <StatCard icon={<Briefcase size={20} />} value={jobs.length} label="Job Matches" trend={{ delta: '+3 new', up: true }} />
         <StatCard icon={<FileText size={20} />} value={3} label="Applications Sent" />
@@ -46,32 +46,39 @@ export default function StudentDashboard() {
       {/* Readiness ring + recommended jobs */}
       <div className="grid lg:grid-cols-3 gap-4 mb-8">
         {/* Readiness Score */}
-        <Card className="p-6 flex flex-col items-center justify-center">
-          <svg width="140" height="140" viewBox="0 0 140 140">
-            <circle cx="70" cy="70" r="60" fill="none" stroke="var(--bg-elevated)" strokeWidth="10" />
-            <circle
-              cx="70" cy="70" r="60" fill="none"
-              stroke="var(--success)" strokeWidth="10" strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 60 * 0.78} ${2 * Math.PI * 60 * 0.22}`}
-              transform="rotate(-90 70 70)"
-            />
-            <text x="70" y="66" textAnchor="middle" className="fill-[var(--text-primary)]" style={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 500 }}>78%</text>
-            <text x="70" y="86" textAnchor="middle" className="fill-[var(--text-tertiary)]" style={{ fontFamily: 'var(--font-body)', fontSize: 11 }}>Readiness</text>
-          </svg>
-          <p className="text-[13px] text-[var(--text-secondary)] mt-3 font-medium">Backend Developer Readiness</p>
+        <Card className="p-6 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--green-bg)] to-transparent opacity-50" />
+          <div className="relative">
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="60" fill="none" stroke="var(--bg-elevated)" strokeWidth="10" />
+              <circle
+                cx="70" cy="70" r="60" fill="none"
+                stroke="var(--green)" strokeWidth="10" strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 60 * 0.78} ${2 * Math.PI * 60 * 0.22}`}
+                transform="rotate(-90 70 70)"
+                className="transition-all duration-1000"
+              />
+              <text x="70" y="62" textAnchor="middle" className="fill-[var(--text-primary)]" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 36 }}>78%</text>
+              <text x="70" y="84" textAnchor="middle" className="fill-[var(--text-tertiary)]" style={{ fontSize: 11 }}>Readiness</text>
+            </svg>
+          </div>
+          <p className="relative text-[13px] text-[var(--text-secondary)] mt-3 font-medium">Backend Developer Readiness</p>
         </Card>
 
         {/* Recommended Jobs */}
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[15px] font-semibold">Recommended Jobs</h2>
+            <h2 className="text-[15px] font-semibold flex items-center gap-2">
+              <Sparkles size={14} className="text-[var(--accent)]" />
+              Recommended Jobs
+            </h2>
             <Link to="/student/jobs" className="text-[13px] text-[var(--accent)] font-medium flex items-center gap-1 hover:underline">
               View all <ArrowRight size={14} />
             </Link>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-2">
             {jobs.slice(0, 3).map(job => (
-              <Card key={job.jobId} className="p-4 min-w-[260px] flex-shrink-0" hover>
+              <Card key={job.jobId} className="p-4 min-w-[260px] flex-shrink-0 group" lift>
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <p className="text-[15px] font-semibold">{job.title}</p>
@@ -108,9 +115,9 @@ export default function StudentDashboard() {
             {skills.slice(0, 9).map(s => (
               <div
                 key={s.id}
-                className={`flex items-center gap-2 p-2 rounded-[var(--radius-sm)] border text-[13px] ${
+                className={`flex items-center gap-2 p-2.5 rounded-xl border text-[13px] transition-all duration-200 hover:shadow-sm ${
                   s.status === 'Verified'
-                    ? 'bg-[var(--success-subtle)] border-[#BBF7D0] text-[var(--success)]'
+                    ? 'bg-[var(--green-bg)] border-[var(--green)]/20 text-[var(--green)]'
                     : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-tertiary)]'
                 }`}
               >
@@ -130,7 +137,7 @@ export default function StudentDashboard() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Strengths</p>
               {['Python', 'REST APIs', 'SQL'].map(s => (
-                <div key={s} className="flex items-center gap-2 mb-1.5 text-[var(--success)]">
+                <div key={s} className="flex items-center gap-2 mb-1.5 text-[var(--green)]">
                   <span className="text-xs">✓</span><span>{s}</span>
                 </div>
               ))}
@@ -138,7 +145,7 @@ export default function StudentDashboard() {
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Missing</p>
               {['Docker', 'Caching', 'CI/CD'].map(s => (
-                <div key={s} className="flex items-center gap-2 mb-1.5 text-[var(--warning)]">
+                <div key={s} className="flex items-center gap-2 mb-1.5 text-[var(--amber)]">
                   <span className="text-xs">!</span><span>{s}</span>
                 </div>
               ))}

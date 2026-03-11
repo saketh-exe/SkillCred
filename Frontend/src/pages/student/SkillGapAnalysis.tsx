@@ -22,7 +22,7 @@ export default function SkillGapAnalysis() {
   return (
     <PageTransition>
       <div className="mb-6">
-        <h1 className="text-[24px] font-bold">Skill Gap Analysis</h1>
+        <h1 className="font-display text-[32px] tracking-tight">Skill Gap Analysis</h1>
         <p className="text-[13px] text-[var(--text-secondary)] mt-1">Understand what you need to reach your target roles.</p>
       </div>
 
@@ -32,7 +32,7 @@ export default function SkillGapAnalysis() {
         <select
           value={selectedRole}
           onChange={e => setSelectedRole(e.target.value)}
-          className="h-[38px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)]"
+          className="h-[38px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] transition-all"
         >
           {gaps.map(g => <option key={g.targetRole} value={g.targetRole}>{g.targetRole}</option>)}
         </select>
@@ -44,7 +44,7 @@ export default function SkillGapAnalysis() {
           <Card className="p-6 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold">{current.targetRole}</h2>
-              <span className="font-[var(--font-mono)] text-2xl font-medium" style={{ color: current.matchPercent >= 75 ? 'var(--success)' : current.matchPercent >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
+              <span className="font-mono text-2xl font-medium" style={{ color: current.matchPercent >= 75 ? 'var(--green)' : current.matchPercent >= 50 ? 'var(--amber)' : 'var(--red)' }}>
                 {current.matchPercent}% Match
               </span>
             </div>

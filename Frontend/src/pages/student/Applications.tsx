@@ -33,7 +33,7 @@ export default function Applications() {
   return (
     <PageTransition>
       <div className="mb-6">
-        <h1 className="text-[24px] font-bold">Applications</h1>
+        <h1 className="font-display text-[32px] tracking-tight">Applications</h1>
         <p className="text-[13px] text-[var(--text-secondary)] mt-1">Track your job applications and pipeline progress.</p>
       </div>
 

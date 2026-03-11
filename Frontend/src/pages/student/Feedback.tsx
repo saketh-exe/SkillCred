@@ -14,7 +14,7 @@ export default function FeedbackPage() {
   return (
     <PageTransition>
       <div className="mb-6">
-        <h1 className="text-[24px] font-bold">Recruiter Feedback</h1>
+        <h1 className="font-display text-[32px] tracking-tight">Recruiter Feedback</h1>
         <p className="text-[13px] text-[var(--text-secondary)] mt-1">Insights from recruiters to help you grow.</p>
       </div>
 

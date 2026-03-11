@@ -1,11 +1,18 @@
 import { useNavigate } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Moon, Sun, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Avatar } from './ui';
+import { useEffect, useState } from 'react';
 
 export default function DashboardNav() {
   const { user, logout } = useAuth();
   const nav = useNavigate();
+  const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('skillcred-theme', dark ? 'dark' : 'light');
+  }, [dark]);
 
   const handleLogout = () => {
     logout();
@@ -13,10 +20,22 @@ export default function DashboardNav() {
   };
 
   return (
-    <header className="h-14 bg-[var(--bg-surface)] border-b border-[var(--border-subtle)] flex items-center px-6 flex-shrink-0 sticky top-0 z-40">
+    <header className="h-14 glass border-b border-[var(--border-subtle)] flex items-center px-6 flex-shrink-0 sticky top-0 z-40">
       <div className="w-full flex items-center justify-between">
-        <span className="text-lg font-bold text-[var(--accent)]">SkillCred</span>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center">
+            <Sparkles size={14} className="text-white" />
+          </div>
+          <span className="text-lg font-bold text-[var(--text-primary)]">Skill<span className="text-[var(--accent)]">Cred</span></span>
+        </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setDark(d => !d)}
+            className="p-2 rounded-lg text-[var(--text-tertiary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-secondary)] transition-all cursor-pointer"
+          >
+            {dark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+          <div className="w-px h-5 bg-[var(--border-subtle)]" />
           <div className="flex items-center gap-2">
             <Avatar name={user?.name ?? ''} size={30} />
             <span className="text-[13px] font-medium text-[var(--text-primary)] hidden sm:inline">{user?.name}</span>

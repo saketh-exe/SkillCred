@@ -30,7 +30,7 @@ export default function RecruiterDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-[24px] font-bold">Welcome back, {user?.name?.split(' ')[0] ?? 'Recruiter'}</h1>
+          <h1 className="font-display text-[32px] tracking-tight">Welcome back, {user?.name?.split(' ')[0] ?? 'Recruiter'}</h1>
           <p className="text-[13px] text-[var(--text-tertiary)] mt-1">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>

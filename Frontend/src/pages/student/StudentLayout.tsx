@@ -19,7 +19,7 @@ export default function StudentLayout() {
       <DashboardNav />
       <div className="flex flex-1">
         <Sidebar items={navItems} />
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-8 overflow-y-auto page-bg">
           <div className="max-w-[1060px]">
             <Outlet />
           </div>

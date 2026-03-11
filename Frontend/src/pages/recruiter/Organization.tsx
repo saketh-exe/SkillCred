@@ -41,7 +41,7 @@ export default function Organization() {
     <PageTransition>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[24px] font-bold">Organization</h1>
+          <h1 className="font-display text-[32px] tracking-tight">Organization</h1>
           <p className="text-[13px] text-[var(--text-secondary)] mt-1">Manage your company profile and team.</p>
         </div>
         {!editing && <Button variant="secondary" onClick={() => setEditing(true)}><Pencil size={14} /> Edit</Button>}

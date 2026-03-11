@@ -30,7 +30,7 @@ export default function JobMatches() {
   return (
     <PageTransition>
       <div className="mb-6">
-        <h1 className="text-[24px] font-bold">Job Matches</h1>
+        <h1 className="font-display text-[32px] tracking-tight">Job Matches</h1>
         <p className="text-[13px] text-[var(--text-secondary)] mt-1">Opportunities matched to your verified skills.</p>
       </div>
 
@@ -42,7 +42,7 @@ export default function JobMatches() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by role or company..."
-            className="w-full h-[38px] pl-9 pr-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)]"
+            className="w-full h-[38px] pl-9 pr-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-xl text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] transition-all"
           />
         </div>
         <div className="flex items-center gap-2">

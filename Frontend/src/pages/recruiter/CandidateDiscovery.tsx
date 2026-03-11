@@ -40,7 +40,7 @@ export default function CandidateDiscovery() {
   return (
     <PageTransition>
       <div className="mb-6">
-        <h1 className="text-[24px] font-bold">Candidates</h1>
+        <h1 className="font-display text-[32px] tracking-tight">Candidates</h1>
         <p className="text-[13px] text-[var(--text-secondary)] mt-1">Discover and evaluate verified student talent.</p>
       </div>
 
