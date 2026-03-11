@@ -76,13 +76,13 @@ export default function StudentSignup() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4 py-12 page-bg noise">
+      <div className="min-h-screen bg-(--bg-base) flex items-center justify-center px-4 py-12 page-bg noise">
         <div className="w-full max-w-xl animate-scaleIn">
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] shadow-[var(--shadow-xl)] p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--accent)] rounded-full opacity-[0.03] -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="bg-(--bg-surface) border border-(--border-subtle) rounded-xl shadow-(--shadow-xl) p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-(--accent) rounded-full opacity-[0.03] -translate-y-1/2 translate-x-1/2 blur-2xl" />
             <div className="relative text-center mb-6">
-              <h1 className="font-display text-[28px] text-[var(--text-primary)] mb-1">Create your account</h1>
-              <p className="text-[13px] text-[var(--text-secondary)]">Join SkillCred as a student</p>
+              <h1 className="font-display text-[28px] text-(--text-primary) mb-1">Create your account</h1>
+              <p className="text-[13px] text-(--text-secondary)">Join SkillCred as a student</p>
             </div>
 
           {/* Step indicator */}
@@ -90,9 +90,9 @@ export default function StudentSignup() {
             {[1, 2, 3].map(s => (
               <div key={s} className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold transition-all duration-300 ${
-                  step >= s ? 'bg-[var(--accent)] text-white shadow-md shadow-[var(--accent)]/20' : 'bg-[var(--bg-elevated)] text-[var(--text-tertiary)]'
+                  step >= s ? 'bg-(--accent) text-white shadow-md shadow-(--accent)/20' : 'bg-(--bg-elevated) text-(--text-tertiary)'
                 }`}>{s}</div>
-                {s < 3 && <div className={`w-12 h-0.5 transition-colors ${step > s ? 'bg-[var(--accent)]' : 'bg-[var(--border-subtle)]'}`} />}
+                {s < 3 && <div className={`w-12 h-0.5 transition-colors ${step > s ? 'bg-(--accent)' : 'bg-(--border-subtle)'}`} />}
               </div>
             ))}
           </div>
@@ -102,28 +102,28 @@ export default function StudentSignup() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Full Name</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Full Name</label>
                 <input value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Alex Johnson" />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Email</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Email</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="alex@university.edu" />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Password</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Password</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputClass} placeholder="Create a password" />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">University</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">University</label>
                 <input value={university} onChange={e => setUniversity(e.target.value)} className={inputClass} placeholder="Stanford University" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Degree</label>
+                  <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Degree</label>
                   <input value={degree} onChange={e => setDegree(e.target.value)} className={inputClass} placeholder="B.S. Computer Science" />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Graduation Year</label>
+                  <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Graduation Year</label>
                   <select value={gradYear} onChange={e => setGradYear(Number(e.target.value))} className={inputClass}>
                     {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -139,12 +139,12 @@ export default function StudentSignup() {
               <h2 className="text-lg font-semibold mb-4">Skills & Interests</h2>
 
               {/* Resume upload shortcut */}
-              <div className="p-4 bg-[var(--bg-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
+              <div className="p-4 bg-(--bg-elevated) rounded-md border border-(--border-subtle)">
                 <input ref={resumeRef} type="file" accept="application/pdf" className="hidden" onChange={handleResumeUpload} />
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Auto-fill from Resume</p>
-                    <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Upload your resume to auto-select matching skills</p>
+                    <p className="text-[11px] text-(--text-tertiary) mt-0.5">Upload your resume to auto-select matching skills</p>
                   </div>
                   <Button variant="secondary" onClick={() => resumeRef.current?.click()} disabled={resumeUploading}>
                     {resumeUploading ? <><Loader2 size={14} className="animate-spin" /> Parsing...</> : resumeParsed ? <><CheckCircle2 size={14} /> Uploaded</> : <><Upload size={14} /> Upload PDF</>}
@@ -153,7 +153,7 @@ export default function StudentSignup() {
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-2">Skills (select all that apply)</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-2">Skills (select all that apply)</label>
                 <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
                   {SKILLS_LIST.map(s => (
                     <button
@@ -161,15 +161,15 @@ export default function StudentSignup() {
                       onClick={() => toggleItem(skills, s, setSkills)}
                       className={`px-3 py-1 text-xs rounded border transition-all ${
                         skills.includes(s)
-                          ? 'bg-[var(--accent-subtle)] border-[var(--accent)] text-[var(--accent-text)] font-medium'
-                          : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)]'
+                          ? 'bg-(--accent-subtle) border-(--accent) text-(--accent-text) font-medium'
+                          : 'bg-(--bg-elevated) border-(--border-subtle) text-(--text-secondary)'
                       }`}
                     >{s}</button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-2">Target Roles</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-2">Target Roles</label>
                 <div className="flex flex-wrap gap-2">
                   {TARGET_ROLES.map(r => (
                     <button
@@ -177,15 +177,15 @@ export default function StudentSignup() {
                       onClick={() => toggleItem(targetRoles, r, setTargetRoles)}
                       className={`px-3 py-1 text-xs rounded border transition-all ${
                         targetRoles.includes(r)
-                          ? 'bg-[var(--accent-subtle)] border-[var(--accent)] text-[var(--accent-text)] font-medium'
-                          : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)]'
+                          ? 'bg-(--accent-subtle) border-(--accent) text-(--accent-text) font-medium'
+                          : 'bg-(--bg-elevated) border-(--border-subtle) text-(--text-secondary)'
                       }`}
                     >{r}</button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Experience Level</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Experience Level</label>
                 <select value={experience} onChange={e => setExperience(e.target.value as ExperienceLevel)} className={inputClass}>
                   <option>Beginner</option>
                   <option>Intermediate</option>
@@ -203,27 +203,27 @@ export default function StudentSignup() {
           {step === 3 && (
             <div className="space-y-5">
               <h2 className="text-lg font-semibold mb-4">Review Your Profile</h2>
-              <div className="bg-[var(--bg-elevated)] rounded-[var(--radius-md)] p-5 space-y-3">
-                <div><span className="text-[13px] text-[var(--text-tertiary)]">Name:</span> <span className="text-sm font-medium">{name || '—'}</span></div>
-                <div><span className="text-[13px] text-[var(--text-tertiary)]">Email:</span> <span className="text-sm font-medium">{email || '—'}</span></div>
-                <div><span className="text-[13px] text-[var(--text-tertiary)]">University:</span> <span className="text-sm font-medium">{university || '—'}</span></div>
-                <div><span className="text-[13px] text-[var(--text-tertiary)]">Degree:</span> <span className="text-sm font-medium">{degree || '—'}</span></div>
-                <div><span className="text-[13px] text-[var(--text-tertiary)]">Grad Year:</span> <span className="text-sm font-medium font-[var(--font-mono)]">{gradYear}</span></div>
+              <div className="bg-(--bg-elevated) rounded-md p-5 space-y-3">
+                <div><span className="text-[13px] text-(--text-tertiary)">Name:</span> <span className="text-sm font-medium">{name || '—'}</span></div>
+                <div><span className="text-[13px] text-(--text-tertiary)">Email:</span> <span className="text-sm font-medium">{email || '—'}</span></div>
+                <div><span className="text-[13px] text-(--text-tertiary)">University:</span> <span className="text-sm font-medium">{university || '—'}</span></div>
+                <div><span className="text-[13px] text-(--text-tertiary)">Degree:</span> <span className="text-sm font-medium">{degree || '—'}</span></div>
+                <div><span className="text-[13px] text-(--text-tertiary)">Grad Year:</span> <span className="text-sm font-medium">{gradYear}</span></div>
                 <div>
-                  <span className="text-[13px] text-[var(--text-tertiary)]">Skills:</span>
+                  <span className="text-[13px] text-(--text-tertiary)">Skills:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {skills.map(s => <Badge key={s}>{s}</Badge>)}
-                    {skills.length === 0 && <span className="text-sm text-[var(--text-tertiary)]">None selected</span>}
+                    {skills.length === 0 && <span className="text-sm text-(--text-tertiary)">None selected</span>}
                   </div>
                 </div>
                 <div>
-                  <span className="text-[13px] text-[var(--text-tertiary)]">Target Roles:</span>
+                  <span className="text-[13px] text-(--text-tertiary)">Target Roles:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {targetRoles.map(r => <Badge key={r} variant="accent">{r}</Badge>)}
-                    {targetRoles.length === 0 && <span className="text-sm text-[var(--text-tertiary)]">None selected</span>}
+                    {targetRoles.length === 0 && <span className="text-sm text-(--text-tertiary)">None selected</span>}
                   </div>
                 </div>
-                <div><span className="text-[13px] text-[var(--text-tertiary)]">Experience:</span> <Badge>{experience}</Badge></div>
+                <div><span className="text-[13px] text-(--text-tertiary)">Experience:</span> <Badge>{experience}</Badge></div>
               </div>
               <div className="flex gap-3 mt-2">
                 <Button variant="secondary" onClick={() => setStep(2)} className="flex-1">Back</Button>
@@ -234,9 +234,9 @@ export default function StudentSignup() {
             </div>
           )}
 
-          <p className="text-center text-[13px] text-[var(--text-tertiary)] mt-6">
+          <p className="text-center text-[13px] text-(--text-tertiary) mt-6">
             Already have an account?{' '}
-            <button onClick={() => nav('/auth/login')} className="text-[var(--accent)] font-medium hover:underline cursor-pointer">Sign in</button>
+            <button onClick={() => nav('/auth/login')} className="text-(--accent) font-medium hover:underline cursor-pointer">Sign in</button>
           </p>
           </div>
         </div>

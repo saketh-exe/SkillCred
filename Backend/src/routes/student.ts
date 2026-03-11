@@ -33,7 +33,7 @@ router.patch("/profile", async (req: AuthRequest, res) => {
       if (key in req.body) update[key] = req.body[key];
     }
 
-    const user = await UserBase.findByIdAndUpdate(req.userId, update, { new: true });
+    const user = await UserBase.findByIdAndUpdate(req.userId, update, { returnDocument: 'after' });
     if (!user) return res.status(404).json({ error: "User not found" });
 
     // Keep skill verifications in sync when skills list changes
@@ -118,7 +118,7 @@ router.patch("/skills/:id", async (req: AuthRequest, res) => {
     const skill = await SkillVerification.findOneAndUpdate(
       { _id: req.params["id"], studentId: req.userId },
       { ...(score != null ? { score } : {}), ...(status ? { status } : {}) },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!skill) return res.status(404).json({ error: "Skill not found" });
     res.json(skill);
@@ -359,7 +359,7 @@ router.patch("/notifications/:id/read", async (req: AuthRequest, res) => {
     const note = await Notification.findOneAndUpdate(
       { _id: req.params["id"], userId: req.userId },
       { read: true },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!note) return res.status(404).json({ error: "Notification not found" });
     res.json({ ok: true });

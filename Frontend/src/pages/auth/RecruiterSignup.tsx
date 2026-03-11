@@ -46,13 +46,13 @@ export default function RecruiterSignup() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center px-4 py-12 page-bg noise">
+      <div className="min-h-screen bg-(--bg-base) flex items-center justify-center px-4 py-12 page-bg noise">
         <div className="w-full max-w-xl animate-scaleIn">
-          <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] shadow-[var(--shadow-xl)] p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--green)] rounded-full opacity-[0.03] -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="bg-(--bg-surface) border border-(--border-subtle) rounded-xl shadow-(--shadow-xl) p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-(--green) rounded-full opacity-[0.03] -translate-y-1/2 translate-x-1/2 blur-2xl" />
             <div className="relative text-center mb-6">
-              <h1 className="font-display text-[28px] text-[var(--text-primary)] mb-1">Create your account</h1>
-              <p className="text-[13px] text-[var(--text-secondary)]">Join SkillCred as a recruiter</p>
+              <h1 className="font-display text-[28px] text-(--text-primary) mb-1">Create your account</h1>
+              <p className="text-[13px] text-(--text-secondary)">Join SkillCred as a recruiter</p>
             </div>
 
           {/* Step indicator */}
@@ -60,9 +60,9 @@ export default function RecruiterSignup() {
             {[1, 2, 3].map(s => (
               <div key={s} className="flex items-center gap-2">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold ${
-                  step >= s ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-elevated)] text-[var(--text-tertiary)]'
+                  step >= s ? 'bg-(--accent) text-white' : 'bg-(--bg-elevated) text-(--text-tertiary)'
                 }`}>{s}</div>
-                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-[var(--accent)]' : 'bg-[var(--border-subtle)]'}`} />}
+                {s < 3 && <div className={`w-12 h-0.5 ${step > s ? 'bg-(--accent)' : 'bg-(--border-subtle)'}`} />}
               </div>
             ))}
           </div>
@@ -71,15 +71,15 @@ export default function RecruiterSignup() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold mb-4">Account Information</h2>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Full Name</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Full Name</label>
                 <input value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Sarah Chen" />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Work Email</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Work Email</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="sarah@company.com" />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Password</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Password</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} className={inputClass} placeholder="Create a password" />
               </div>
               <Button onClick={() => setStep(2)} className="w-full mt-2">Continue</Button>
@@ -90,23 +90,23 @@ export default function RecruiterSignup() {
             <div className="space-y-4">
               <h2 className="text-lg font-semibold mb-4">Organization Profile</h2>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Company Name</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Company Name</label>
                 <input value={companyName} onChange={e => setCompanyName(e.target.value)} className={inputClass} placeholder="TechCorp" />
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Industry</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Industry</label>
                 <select value={industry} onChange={e => setIndustry(e.target.value)} className={inputClass}>
                   {INDUSTRIES.map(i => <option key={i}>{i}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Company Size</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Company Size</label>
                 <select value={companySize} onChange={e => setCompanySize(e.target.value)} className={inputClass}>
                   {SIZES.map(s => <option key={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-2">Hiring Domains</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-2">Hiring Domains</label>
                 <div className="flex flex-wrap gap-2">
                   {DOMAINS.map(d => (
                     <button
@@ -114,19 +114,19 @@ export default function RecruiterSignup() {
                       onClick={() => toggleDomain(d)}
                       className={`px-3 py-1 text-xs rounded border transition-all ${
                         hiringDomains.includes(d)
-                          ? 'bg-[var(--accent-subtle)] border-[var(--accent)] text-[var(--accent-text)] font-medium'
-                          : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] text-[var(--text-secondary)]'
+                          ? 'bg-(--accent-subtle) border-(--accent) text-(--accent-text) font-medium'
+                          : 'bg-(--bg-elevated) border-(--border-subtle) text-(--text-secondary)'
                       }`}
                     >{d}</button>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Company Description</label>
+                <label className="block text-[13px] font-medium text-(--text-secondary) mb-1.5">Company Description</label>
                 <textarea
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  className="w-full h-24 px-3 py-2 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] transition-all resize-none"
+                  className="w-full h-24 px-3 py-2 border border-(--border-default) bg-(--bg-surface) rounded-sm text-sm focus:outline-none focus:border-(--accent) focus:ring-[3px] focus:ring-(--accent-subtle) transition-all resize-none"
                   placeholder="Tell us about your company..."
                 />
               </div>
@@ -139,12 +139,12 @@ export default function RecruiterSignup() {
 
           {step === 3 && (
             <div className="text-center space-y-6">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[var(--success-subtle)] flex items-center justify-center">
-                <span className="text-[var(--success)] text-2xl">✓</span>
+              <div className="w-16 h-16 mx-auto rounded-full bg-(--success-subtle) flex items-center justify-center">
+                <span className="text-(--success) text-2xl">✓</span>
               </div>
               <div>
                 <h2 className="text-xl font-semibold mb-2">Your recruiter account is ready!</h2>
-                <p className="text-sm text-[var(--text-secondary)]">
+                <p className="text-sm text-(--text-secondary)">
                   Welcome to SkillCred, {name || 'there'}. Start by posting your first job to attract verified candidates.
                 </p>
               </div>
@@ -154,9 +154,9 @@ export default function RecruiterSignup() {
             </div>
           )}
 
-          <p className="text-center text-[13px] text-[var(--text-tertiary)] mt-6">
+          <p className="text-center text-[13px] text-(--text-tertiary) mt-6">
             Already have an account?{' '}
-            <button onClick={() => nav('/auth/login')} className="text-[var(--accent)] font-medium hover:underline cursor-pointer">Sign in</button>
+            <button onClick={() => nav('/auth/login')} className="text-(--accent) font-medium hover:underline cursor-pointer">Sign in</button>
           </p>
           </div>
         </div>

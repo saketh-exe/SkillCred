@@ -16,11 +16,11 @@ export default function CandidateProfile() {
     if (id) recruiterService.getCandidate(id).then(setCandidate);
   }, [id]);
 
-  if (!candidate) return <div className="p-8 text-center text-[var(--text-tertiary)]">Loading...</div>;
+  if (!candidate) return <div className="p-8 text-center text-(--text-tertiary)">Loading...</div>;
 
   return (
     <PageTransition>
-      <Link to="/recruiter/candidates" className="inline-flex items-center gap-1 text-[13px] text-[var(--accent)] font-medium hover:underline mb-4">
+      <Link to="/recruiter/candidates" className="inline-flex items-center gap-1 text-[13px] text-(--accent) font-medium hover:underline mb-4">
         <ArrowLeft size={14} /> Back to Candidates
       </Link>
 
@@ -30,16 +30,16 @@ export default function CandidateProfile() {
           <Avatar name={candidate.name} size={64} />
           <div className="flex-1">
             <h1 className="text-xl font-semibold">{candidate.name}</h1>
-            <p className="text-[13px] text-[var(--text-secondary)]">{candidate.university} · {candidate.degree} · Class of {candidate.graduationYear}</p>
+            <p className="text-[13px] text-(--text-secondary)">{candidate.university} · {candidate.degree} · Class of {candidate.graduationYear}</p>
             <div className="flex flex-wrap gap-1 mt-2">
               {candidate.targetRoles.map(r => <Badge key={r} variant="accent">{r}</Badge>)}
             </div>
           </div>
           <div className="text-right">
-            <p className="font-[var(--font-mono)] text-3xl font-medium" style={{ color: candidate.matchPercent >= 75 ? 'var(--success)' : candidate.matchPercent >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
+            <p className="font-(--font-mono) text-3xl" style={{ color: candidate.matchPercent >= 75 ? 'var(--success)' : candidate.matchPercent >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
               {candidate.matchPercent}%
             </p>
-            <p className="text-[11px] text-[var(--text-tertiary)]">Match Score</p>
+            <p className="text-[11px] text-(--text-tertiary)">Match Score</p>
           </div>
         </div>
       </Card>
@@ -55,20 +55,20 @@ export default function CandidateProfile() {
               strokeDasharray={`${2 * Math.PI * 50 * (candidate.readinessScore / 100)} ${2 * Math.PI * 50 * (1 - candidate.readinessScore / 100)}`}
               transform="rotate(-90 60 60)"
             />
-            <text x="60" y="56" textAnchor="middle" style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500 }} className="fill-[var(--text-primary)]">{candidate.readinessScore}%</text>
-            <text x="60" y="74" textAnchor="middle" style={{ fontFamily: 'var(--font-body)', fontSize: 10 }} className="fill-[var(--text-tertiary)]">Readiness</text>
+            <text x="60" y="56" textAnchor="middle" style={{ fontFamily: 'var(--font-mono)', fontSize: 24, fontWeight: 500 }} className="fill-(--text-primary)">{candidate.readinessScore}%</text>
+            <text x="60" y="74" textAnchor="middle" style={{ fontFamily: 'var(--font-body)', fontSize: 10 }} className="fill-(--text-tertiary)">Readiness</text>
           </svg>
         </Card>
 
         {/* Verified Skills */}
         <Card className="p-6">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3">Verified Skills</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-(--text-tertiary) mb-3">Verified Skills</h3>
           <div className="flex flex-wrap gap-1">
             {candidate.verifiedSkills.map(s => <Badge key={s} variant="success">{s}</Badge>)}
           </div>
           {candidate.allSkills.filter(s => !candidate.verifiedSkills.includes(s)).length > 0 && (
             <>
-              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mt-4 mb-2">Unverified</h3>
+              <h3 className="text-[11px] font-semibold uppercase tracking-wider text-(--text-tertiary) mt-4 mb-2">Unverified</h3>
               <div className="flex flex-wrap gap-1">
                 {candidate.allSkills.filter(s => !candidate.verifiedSkills.includes(s)).map(s => <Badge key={s} variant="neutral">{s}</Badge>)}
               </div>
@@ -78,18 +78,18 @@ export default function CandidateProfile() {
 
         {/* GitHub Stats */}
         <Card className="p-6">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-3 flex items-center gap-1"><Github size={14} /> GitHub</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-(--text-tertiary) mb-3 flex items-center gap-1"><Github size={14} /> GitHub</h3>
           {candidate.githubStats ? (
             <div className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Repositories</span><span className="font-[var(--font-mono)] font-medium">{candidate.githubStats.repos}</span></div>
-              <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Contributions</span><span className="font-[var(--font-mono)] font-medium">{candidate.githubStats.contributions}</span></div>
+              <div className="flex justify-between"><span className="text-(--text-secondary)">Repositories</span><span className="font-(--font-mono)">{candidate.githubStats.repos}</span></div>
+              <div className="flex justify-between"><span className="text-(--text-secondary)">Contributions</span><span className="font-(--font-mono)">{candidate.githubStats.contributions}</span></div>
               <div>
-                <span className="text-[var(--text-secondary)]">Languages</span>
+                <span className="text-(--text-secondary)">Languages</span>
                 <div className="flex flex-wrap gap-1 mt-1">{candidate.githubStats.languages.map(l => <Badge key={l}>{l}</Badge>)}</div>
               </div>
             </div>
           ) : (
-            <p className="text-sm text-[var(--text-tertiary)]">No GitHub connected</p>
+            <p className="text-sm text-(--text-tertiary)">No GitHub connected</p>
           )}
         </Card>
       </div>

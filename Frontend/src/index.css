@@ -88,6 +88,7 @@
   --pink-bg: #FDF2F8;
   --emerald: #10B981;
   --emerald-bg: #ECFDF5;
+  --grid-line: rgba(0,0,0,0.06);
 }
 
 :root.dark {
@@ -98,6 +99,7 @@
   --bg-overlay: #000000;
   --border-subtle: #2A2A30;
   --border-default: #3A3A42;
+  --grid-line: rgba(255,255,255,0.07);
   --border-strong: #55555F;
   --text-primary: #EDEDEF;
   --text-secondary: #A0A0A8;
@@ -251,10 +253,11 @@ h1, h2, h3, h4, h5, h6 {
   pointer-events: none;
   z-index: 0;
   background-image:
-    radial-gradient(circle at 1px 1px, var(--border-subtle) 0.5px, transparent 0);
-  background-size: 28px 28px;
-  opacity: 0.5;
-  mask-image: radial-gradient(ellipse 60% 50% at 50% 0%, black 20%, transparent 100%);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 40%, transparent 100%);
 }
 .page-bg > * {
   position: relative;
@@ -270,14 +273,20 @@ h1, h2, h3, h4, h5, h6 {
   animation: glow 4s ease-in-out infinite;
 }
 .glow-orb-accent {
-  width: 400px; height: 400px;
-  background: var(--accent);
-  top: -100px; right: -100px;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%);
+  top: -100px; left: -100px;
+  filter: blur(80px);
+  opacity: 1;
+  animation: glow 5s ease-in-out infinite;
 }
 .glow-orb-green {
-  width: 300px; height: 300px;
-  background: var(--green);
-  bottom: -50px; left: -50px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(34,197,94,0.14) 0%, transparent 70%);
+  bottom: -80px; right: -80px;
+  filter: blur(80px);
+  opacity: 1;
+  animation: glow 7s ease-in-out infinite 1.5s;
 }
 
 /* Noise overlay */

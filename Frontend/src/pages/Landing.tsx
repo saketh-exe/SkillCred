@@ -1,33 +1,33 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  GraduationCap, Building2, Shield, Brain, BarChart3, Target,
-  Users, Zap, ArrowRight, ChevronRight, FileCheck, GitBranch,
-  Star, CheckCircle, Sparkles, TrendingUp, Award, Code,
+  GraduationCap, Building2, Shield, Brain, BarChart3,
+  Users, Zap, ArrowRight, FileCheck, GitBranch,
+  CheckCircle, TrendingUp, Award, Code, Target,
 } from 'lucide-react';
+import Logo from '../components/ui/Logo';
 import { Button } from '../components/ui';
+import { ToggleTheme } from '../components/ui/toggle-theme';
 import PageTransition from '../components/PageTransition';
 
 /* ─── data ─── */
-const stats = [
-  { value: 10000, suffix: '+', label: 'Students Verified', icon: <Users size={20} /> },
-  { value: 500, suffix: '+', label: 'Recruiters Active', icon: <Building2 size={20} /> },
-  { value: 94, suffix: '%', label: 'Hiring Accuracy', icon: <Target size={20} /> },
-  { value: 3.2, suffix: 'x', label: 'Faster Placements', icon: <Zap size={20} /> },
+const statsData = [
+  { value: 12400, suffix: '+', label: 'Students Verified', sub: 'and growing every day', color: 'var(--accent)' },
+  { value: 680, suffix: '+', label: 'Partner Recruiters', sub: 'across 40+ industries', color: 'var(--emerald)' },
+  { value: 96, suffix: '%', label: 'Hiring Accuracy', sub: 'vs. 61% industry average', color: 'var(--amber)' },
 ];
 
 const features = [
-  { icon: <Shield size={22} />, title: 'Skill Verification', desc: 'Validate technical skills with standardized assessments and earn verified badges recruiters trust.', color: 'var(--accent)' },
-  { icon: <Brain size={22} />, title: 'Smart Matching', desc: 'AI-powered matching connects students with the right opportunities based on verified skills.', color: 'var(--green)' },
-  { icon: <BarChart3 size={22} />, title: 'Skill Gap Insights', desc: 'See exactly what skills you need for your target roles with personalized improvement plans.', color: 'var(--amber)' },
-  { icon: <TrendingUp size={22} />, title: 'Readiness Score', desc: 'Get a real-time readiness score showing how prepared you are for specific positions.', color: 'var(--pink)' },
+  { icon: <Shield size={22} />, title: 'Skill Verification', desc: 'Rigorous assessments that validate real competency — not just résumé claims.', color: '#6366F1' },
+  { icon: <Brain size={22} />, title: 'Smart Matching', desc: 'AI-powered scoring between candidate skill depth and role requirements.', color: '#10B981' },
+  { icon: <BarChart3 size={22} />, title: 'Gap Insights', desc: 'A precise learning path showing exactly what skills close the gap to your target role.', color: '#F59E0B' },
+  { icon: <TrendingUp size={22} />, title: 'Readiness Score', desc: 'One honest number — how prepared you are, calculated from verified data only.', color: '#EC4899' },
 ];
 
 const steps = [
-  { num: '01', title: 'Create Your Profile', desc: 'Sign up and upload your resume or connect GitHub to get started.', icon: <FileCheck size={20} /> },
-  { num: '02', title: 'Verify Skills', desc: 'Take standardized assessments to earn verified badges on your profile.', icon: <Shield size={20} /> },
-  { num: '03', title: 'Get Matched', desc: 'Our AI matches you with roles that fit your verified skills and goals.', icon: <GitBranch size={20} /> },
-  { num: '04', title: 'Land the Job', desc: 'Apply with confidence backed by verified credentials and data.', icon: <Star size={20} /> },
+  { num: '01', icon: <FileCheck size={22} />, title: 'Verify Skills', desc: 'Take structured assessments. Earn verified badges that prove your actual competency.', color: '#6366F1' },
+  { num: '02', icon: <GitBranch size={22} />, title: 'Get Matched', desc: 'Our engine ranks you against job requirements using verified data — not self-reported experience.', color: '#10B981' },
+  { num: '03', icon: <Award size={22} />, title: 'Get Hired', desc: 'Apply with confidence. Recruiters see your match score and credentials upfront.', color: '#F59E0B' },
 ];
 
 const skills = [
@@ -36,46 +36,52 @@ const skills = [
   'PostgreSQL', 'Git', 'REST APIs', 'MongoDB', 'CI/CD', 'System Design',
 ];
 
-/* ─── counter hook ─── */
-function useCountUp(end: number, duration = 1800) {
-  const [val, setVal] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  const started = useRef(false);
+const avatarColors = ['#6366F1', '#10B981', '#F59E0B', '#EC4899', '#3B82F6'];
+const avatarInitials = ['AP', 'CM', 'YT', 'LK', 'SR'];
 
+/* ─── hooks ─── */
+function useCountUp(end: number, active: boolean, duration = 1800) {
+  const [val, setVal] = useState(0);
+  const started = useRef(false);
+  useEffect(() => {
+    if (!active || started.current) return;
+    started.current = true;
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      setVal(Math.round(ease * end));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [active, end, duration]);
+  return val;
+}
+
+function useInView(threshold = 0.2): [React.RefObject<HTMLElement>, boolean] {
+  const ref = useRef<HTMLElement>(null);
+  const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !started.current) {
-        started.current = true;
-        const start = performance.now();
-        const step = (now: number) => {
-          const t = Math.min((now - start) / duration, 1);
-          const ease = 1 - Math.pow(1 - t, 3);
-          setVal(Number((ease * end).toFixed(end % 1 !== 0 ? 1 : 0)));
-          if (t < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }
-    }, { threshold: 0.3 });
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true); }, { threshold });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [end, duration]);
-
-  return { val, ref };
+  }, [threshold]);
+  return [ref, inView];
 }
 
-function StatCounter({ value, suffix, label, icon }: { value: number; suffix: string; label: string; icon: React.ReactNode }) {
-  const { val, ref } = useCountUp(value);
+/* ─── stat counter ─── */
+function StatCounter({ value, suffix, label, sub, color }: { value: number; suffix: string; label: string; sub: string; color: string }) {
+  const [ref, inView] = useInView(0.3);
+  const val = useCountUp(value, inView);
   return (
-    <div ref={ref} className="text-center">
-      <div className="w-11 h-11 mx-auto mb-3 rounded-xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center">
-        {icon}
-      </div>
-      <p className="font-display text-[36px] text-[var(--text-primary)] tracking-tight leading-none">
-        {val}{suffix}
+    <div ref={ref as React.RefObject<HTMLDivElement>} className="text-center py-10 px-8">
+      <p className="font-display text-[clamp(40px,5.5vw,64px)] leading-none mb-2" style={{ color }}>
+        {val.toLocaleString()}{suffix}
       </p>
-      <p className="text-[13px] text-[var(--text-tertiary)] mt-1 font-medium">{label}</p>
+      <p className="text-[15px] font-semibold text-[var(--text-primary)] mb-1">{label}</p>
+      <p className="text-[13px] text-[var(--text-tertiary)]">{sub}</p>
     </div>
   );
 }
@@ -83,7 +89,8 @@ function StatCounter({ value, suffix, label, icon }: { value: number; suffix: st
 export default function Landing() {
   const nav = useNavigate();
   const [mouse, setMouse] = useState({ x: -500, y: -500 });
-  const [hoveredCta, setHoveredCta] = useState<'student' | 'recruiter' | null>(null);
+  const [hoveredSide, setHoveredSide] = useState<'student' | 'recruiter' | null>(null);
+  const [featRef, featInView] = useInView(0.1);
 
   const handleMouse = useCallback((e: React.MouseEvent) => {
     setMouse({ x: e.clientX, y: e.clientY });
@@ -95,229 +102,307 @@ export default function Landing() {
         {/* Cursor glow */}
         <div className="cursor-glow" style={{ left: mouse.x, top: mouse.y }} />
 
+        {/* Page-wide grid + atmospheric glow orbs */}
+        <div className="page-bg fixed inset-0 pointer-events-none z-0" />
+        <div className="glow-orb glow-orb-accent" />
+        <div className="glow-orb glow-orb-green" />
+
         {/* ── Nav ── */}
-        <header className="h-14 glass border-b border-[var(--border-subtle)] flex items-center px-6 sticky top-0 z-50">
-          <div className="max-w-[1200px] mx-auto w-full flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center">
-                <Sparkles size={14} className="text-white" />
-              </div>
-              <span className="text-lg font-bold text-[var(--text-primary)]">Skill<span className="text-[var(--accent)]">Cred</span></span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={() => nav('/auth/login')}>Sign In</Button>
-              <Button onClick={() => nav('/auth/signup/student')}>Get Started</Button>
-            </div>
+        <header className="h-[62px] glass border-b border-[var(--border-subtle)] flex items-center px-[5%] sticky top-0 z-50">
+          <div className="flex items-center gap-2 flex-1">
+            <Logo size={22} />
+            <span className="text-[16px] font-bold tracking-tight text-[var(--text-primary)]">
+              Skill<span className="text-[var(--accent)]">Cred</span>
+            </span>
+          </div>
+          <nav className="hidden md:flex gap-8 text-[14px] text-[var(--text-secondary)]">
+            {['Platform', 'For Students', 'For Recruiters', 'Pricing'].map(l => (
+              <span key={l} className="hover:text-[var(--text-primary)] cursor-pointer transition-colors duration-150">{l}</span>
+            ))}
+          </nav>
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <ToggleTheme />
+            <Button variant="ghost" onClick={() => nav('/auth/login')}>Sign In</Button>
+            <Button onClick={() => nav('/auth/signup/student')}>Get Started</Button>
           </div>
         </header>
 
         {/* ── Hero ── */}
-        <section className="relative overflow-hidden">
-          {/* Grid + glow orbs */}
-          <div className="page-bg absolute inset-0" />
-          <div className="glow-orb glow-orb-accent" />
-          <div className="glow-orb glow-orb-green" />
+        <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-[5%] pt-[120px] pb-20">
+          {/* Spinning ring ornament */}
+          <div className="absolute top-[11%] right-[10%] opacity-[0.12] pointer-events-none hidden lg:block"
+            style={{ animation: 'spinSlow 30s linear infinite' }}>
+            <svg width="180" height="180" viewBox="0 0 180 180">
+              <circle cx="90" cy="90" r="80" stroke="var(--accent)" strokeWidth="1" fill="none" strokeDasharray="8 6" />
+              <circle cx="90" cy="90" r="55" stroke="var(--accent)" strokeWidth=".5" fill="none" strokeDasharray="4 8" />
+            </svg>
+          </div>
 
-          <div className="relative max-w-[1200px] mx-auto px-8 pt-28 pb-16 z-10">
-            <div className="text-center mb-8 animate-fadeUp">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[var(--accent-subtle)] text-[var(--accent)] text-[12px] font-semibold mb-8 border border-[var(--accent)]/15">
-                <Sparkles size={12} /> Trusted by 500+ companies hiring smarter
-              </div>
-              <h2 className="font-display text-[52px] md:text-[68px] leading-[1.02] text-[var(--text-primary)] mb-6 tracking-tight">
-                Hiring built on{' '}
-                <span className="relative inline-block">
-                  <span className="text-[var(--accent)]">verified skills</span>
-                  <svg className="absolute -bottom-1 left-0 w-full" viewBox="0 0 200 8" fill="none">
-                    <path d="M2 6C50 2 150 2 198 6" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" opacity="0.4" />
-                  </svg>
-                </span>
-                ,<br />not guesswork.
-              </h2>
-              <p className="text-[17px] text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
-                SkillCred connects verified student talent with forward-thinking recruiters through skill-based assessments, smart matching, and transparent hiring pipelines.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center gap-3 mt-10 mb-20 animate-fadeUp" style={{ animationDelay: '0.15s' }}>
-              <Button onClick={() => nav('/auth/signup/student')} className="h-11 px-7 text-[14px] shadow-lg shadow-[var(--accent)]/20">
-                Start for Free <ArrowRight size={16} />
-              </Button>
-              <Button variant="secondary" onClick={() => nav('/auth/signup/recruiter')} className="h-11 px-7 text-[14px]">
-                I'm a Recruiter <ChevronRight size={16} />
-              </Button>
-            </div>
-
-            {/* Floating cards */}
-            <div className="relative max-w-4xl mx-auto h-[220px] hidden md:block">
-              {/* Card 1 — Skill badge */}
-              <div className="absolute left-[5%] top-4 animate-float1 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-lg w-[200px]">
-                <div className="flex items-center gap-2 mb-2">
-                  <Award size={16} className="text-[var(--green)]" />
-                  <span className="text-[13px] font-semibold">React Verified</span>
+          {/* Floating card — left: Match Score */}
+          <div className="animate-float1 absolute left-[3%] top-[34%] z-10 hidden lg:block">
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-lg w-[178px]">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)] mb-3">Match Score</p>
+              <div className="flex items-center gap-3">
+                <svg width="44" height="44" viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="17" fill="none" stroke="var(--bg-elevated)" strokeWidth="4" />
+                  <circle cx="22" cy="22" r="17" fill="none" stroke="var(--green)" strokeWidth="4"
+                    strokeDasharray="107" strokeDashoffset="11" transform="rotate(-90 22 22)" strokeLinecap="round" />
+                  <text x="22" y="26" textAnchor="middle" fill="var(--green)" style={{ fontSize: 10, fontWeight: 700, fontFamily: 'DM Sans' }}>94%</text>
+                </svg>
+                <div>
+                  <p className="text-[13px] font-semibold text-[var(--text-primary)]">Aisha P.</p>
+                  <p className="text-[11px] text-[var(--text-tertiary)]">Backend Dev</p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2 flex-1 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
-                    <div className="h-full w-[92%] rounded-full bg-[var(--green)]" />
+              </div>
+            </div>
+          </div>
+
+          {/* Floating card — right: Badge Earned */}
+          <div className="animate-float2 absolute right-[3%] top-[30%] z-10 hidden lg:block" style={{ animationDelay: '1s' }}>
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-lg w-[190px]">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)] mb-3">Badge Earned</p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xl"
+                  style={{ background: 'rgba(99,102,241,.12)' }}>🐍</div>
+                <div>
+                  <p className="text-[13px] font-semibold text-[var(--text-primary)]">Python</p>
+                  <p className="text-[11px] font-semibold" style={{ color: 'var(--green)' }}>✓ Verified · 92%</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Floating card — bottom-right: New Match */}
+          <div className="animate-float1 absolute right-[6%] bottom-[22%] z-10 hidden lg:block" style={{ animationDelay: '2s' }}>
+            <div className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-3.5 shadow-lg">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)] mb-2">New Match</p>
+              <p className="text-[13px] font-semibold text-[var(--text-primary)] mb-2">Stripe · Backend Dev</p>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+                style={{ background: 'var(--success-subtle)', color: 'var(--success)' }}>
+                <Target size={10} /> 94% match
+              </span>
+            </div>
+          </div>
+
+          {/* Hero text */}
+          <div className="relative z-10 text-center max-w-[840px] w-full animate-fadeUp">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)] text-[12px] font-semibold text-[var(--text-secondary)] mb-7">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)] animate-pulse inline-block" />
+              Now in early access — 12,400+ students verified
+            </div>
+
+            <h1 className="font-display text-[clamp(44px,7.5vw,88px)] leading-[1.04] text-[var(--text-primary)] tracking-[-2px] mb-7">
+              Hiring built on{' '}
+              <span className="relative inline-block italic">
+                skills
+                <svg className="absolute -bottom-1.5 left-0 w-full overflow-visible pointer-events-none" height="10" viewBox="0 0 300 10" preserveAspectRatio="none">
+                  <path d="M0 8 C80 0,160 12,300 6" stroke="var(--accent)" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
+              , not<br />guesswork.
+            </h1>
+
+            <p className="text-[18px] text-[var(--text-secondary)] max-w-[540px] mx-auto leading-[1.75] mb-10">
+              The platform that verifies what candidates actually know and matches them to roles with precision — not keyword filters.
+            </p>
+
+            <div className="flex gap-3 justify-center flex-wrap mb-14">
+              <Button onClick={() => nav('/auth/signup/student')} className="h-12 px-7 text-[15px] shadow-lg shadow-[var(--accent)]/20">
+                <Zap size={16} /> Start as Student
+              </Button>
+              <Button variant="secondary" onClick={() => nav('/auth/signup/recruiter')} className="h-12 px-7 text-[15px]">
+                Hire verified talent <ArrowRight size={16} />
+              </Button>
+            </div>
+
+            {/* Social proof */}
+            <div className="flex items-center justify-center gap-3">
+              <div className="flex">
+                {avatarInitials.map((init, i) => (
+                  <div key={i} className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold border-2"
+                    style={{
+                      background: avatarColors[i] + '22',
+                      borderColor: avatarColors[i] + '55',
+                      color: avatarColors[i],
+                      marginLeft: i > 0 ? -9 : 0,
+                      zIndex: 5 - i,
+                      position: 'relative',
+                    }}>
+                    {init}
                   </div>
-                  <span className="text-[11px] font-mono text-[var(--green)]">92%</span>
-                </div>
+                ))}
               </div>
-
-              {/* Card 2 — Match score */}
-              <div className="absolute right-[5%] top-2 animate-float2 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-lg w-[210px]" style={{ animationDelay: '0.5s' }}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Target size={16} className="text-[var(--accent)]" />
-                  <span className="text-[13px] font-semibold">Job Match</span>
-                </div>
-                <div className="text-center">
-                  <span className="font-display text-[32px] text-[var(--accent)]">87%</span>
-                  <p className="text-[11px] text-[var(--text-tertiary)]">Backend Developer at Stripe</p>
-                </div>
-              </div>
-
-              {/* Card 3 — Code snippet */}
-              <div className="absolute left-[30%] top-[60px] animate-float1 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl p-4 shadow-lg w-[240px]" style={{ animationDelay: '1s' }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Code size={14} className="text-[var(--pink)]" />
-                  <span className="text-[12px] font-semibold text-[var(--text-secondary)]">GitHub Analysis</span>
-                </div>
-                <div className="font-mono text-[11px] text-[var(--text-tertiary)] space-y-1">
-                  <div><span className="text-[var(--green)]">156</span> contributions</div>
-                  <div><span className="text-[var(--accent)]">12</span> repositories</div>
-                  <div><span className="text-[var(--amber)]">A+</span> code quality</div>
-                </div>
-              </div>
+              <span className="text-[13px] text-[var(--text-secondary)]">
+                Joined by <strong className="text-[var(--text-primary)]">12,400+</strong> students this year
+              </span>
             </div>
           </div>
         </section>
 
         {/* ── Skill Ticker ── */}
-        <div className="section-line" />
-        <section className="py-6 overflow-hidden">
+        <div className="border-y border-[var(--border-subtle)] bg-[var(--bg-surface)] py-3.5 overflow-hidden">
           <div className="ticker-track">
             <div className="ticker-inner">
               {[...skills, ...skills].map((s, i) => (
-                <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] text-[13px] font-medium text-[var(--text-secondary)] whitespace-nowrap">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
-                  {s}
+                <span key={i} className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[12px] font-semibold text-[var(--text-secondary)] whitespace-nowrap">
+                  <span className="w-1 h-1 rounded-full bg-[var(--accent)] opacity-60 inline-block" />{s}
                 </span>
               ))}
             </div>
           </div>
-        </section>
-        <div className="section-line" />
+        </div>
 
-        {/* ── Split CTA ── */}
-        <section className="max-w-[1200px] mx-auto px-8 py-24">
-          <div className="text-center mb-14 animate-fadeUp">
-            <p className="text-[12px] font-semibold uppercase tracking-widest text-[var(--accent)] mb-3">Choose Your Path</p>
-            <h3 className="font-display text-[40px] text-[var(--text-primary)] tracking-tight">Built for both sides of the table.</h3>
-          </div>
-          <div className="grid md:grid-cols-2 gap-5">
-            {/* Student */}
+        {/* ── Split — For Students / For Recruiters ── */}
+        <section className="flex min-h-[560px] border-b border-[var(--border-subtle)]">
+          {[
+            {
+              id: 'student' as const,
+              tag: 'For Students', tagColor: '#6366F1', tagBg: 'rgba(99,102,241,.08)',
+              icon: <GraduationCap size={26} />,
+              headline: 'Prove what you know.\nLand what you deserve.',
+              sub: 'Get verified on your actual skills. See your match score before applying. Know exactly what to learn next.',
+              cta: 'Start as Student →',
+              path: '/auth/signup/student',
+              items: ['Skill verification badges', 'Job match scoring', 'Gap analysis per role', 'Readiness roadmap'],
+              accentGlow: 'rgba(99,102,241,.06)',
+            },
+            {
+              id: 'recruiter' as const,
+              tag: 'For Recruiters', tagColor: '#10B981', tagBg: 'rgba(16,185,129,.08)',
+              icon: <Building2 size={26} />,
+              headline: 'Hire people who can\nactually do the job.',
+              sub: 'Browse verified candidates ranked by skill depth. Build smart evaluation pipelines. Make data-backed decisions.',
+              cta: 'Start hiring →',
+              path: '/auth/signup/recruiter',
+              items: ['Verified talent pool', 'Match score ranking', 'Custom pipelines', 'Candidate comparison'],
+              accentGlow: 'rgba(16,185,129,.06)',
+            },
+          ].map((side, idx) => (
             <div
-              onClick={() => nav('/auth/signup/student')}
-              onMouseEnter={() => setHoveredCta('student')}
-              onMouseLeave={() => setHoveredCta(null)}
-              className={`relative bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-8 cursor-pointer transition-all duration-300 overflow-hidden group ${
-                hoveredCta === 'student' ? 'shadow-xl border-[var(--accent)]/30 scale-[1.01]' : hoveredCta === 'recruiter' ? 'opacity-60 scale-[0.99]' : 'shadow-md hover:shadow-lg'
-              }`}
+              key={side.id}
+              onMouseEnter={() => setHoveredSide(side.id)}
+              onMouseLeave={() => setHoveredSide(null)}
+              className="relative flex-1 flex flex-col justify-center px-12 py-16 cursor-pointer overflow-hidden transition-all duration-500"
+              style={{
+                flex: hoveredSide === side.id ? 1.18 : hoveredSide !== null ? 0.82 : 1,
+                borderRight: idx === 0 ? '1px solid var(--border-subtle)' : 'none',
+              }}
+              onClick={() => nav(side.path)}
             >
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--accent)] opacity-[0.03] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:opacity-[0.08] group-hover:scale-125 transition-all duration-500" />
-              <div className="w-14 h-14 mb-5 rounded-2xl bg-[var(--accent-subtle)] flex items-center justify-center text-[var(--accent)]">
-                <GraduationCap size={28} />
-              </div>
-              <h3 className="font-display text-[28px] mb-2">For Students</h3>
-              <p className="text-[14px] text-[var(--text-secondary)] mb-6 leading-relaxed">Prove your skills, get discovered, and land your dream role.</p>
-              <ul className="text-[13px] text-[var(--text-secondary)] space-y-3 mb-8">
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Verify your skills and earn trusted badges</li>
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Get matched with relevant opportunities</li>
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Receive actionable feedback from recruiters</li>
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Track readiness with skill gap analysis</li>
-              </ul>
-              <Button className="w-full h-11 text-[14px]">Get Started as Student <ArrowRight size={14} /></Button>
-            </div>
+              {/* Dot grid */}
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ backgroundImage: 'radial-gradient(var(--border-subtle) 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: .5 }} />
+              {/* Accent glow */}
+              <div className="absolute top-0 right-0 w-64 h-64 rounded-full pointer-events-none"
+                style={{ background: `radial-gradient(circle at top right, ${side.accentGlow} 0%, transparent 70%)` }} />
 
-            {/* Recruiter */}
-            <div
-              onClick={() => nav('/auth/signup/recruiter')}
-              onMouseEnter={() => setHoveredCta('recruiter')}
-              onMouseLeave={() => setHoveredCta(null)}
-              className={`relative bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-8 cursor-pointer transition-all duration-300 overflow-hidden group ${
-                hoveredCta === 'recruiter' ? 'shadow-xl border-[var(--green)]/30 scale-[1.01]' : hoveredCta === 'student' ? 'opacity-60 scale-[0.99]' : 'shadow-md hover:shadow-lg'
-              }`}
-            >
-              <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--green)] opacity-[0.03] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:opacity-[0.08] group-hover:scale-125 transition-all duration-500" />
-              <div className="w-14 h-14 mb-5 rounded-2xl bg-[var(--green-bg)] flex items-center justify-center text-[var(--green)]">
-                <Building2 size={28} />
+              <div className="relative z-10 max-w-sm">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-bold tracking-widest uppercase mb-5"
+                  style={{ background: side.tagBg, color: side.tagColor }}>
+                  <span className="text-base">{idx === 0 ? '⚡' : '◈'}</span> {side.tag}
+                </div>
+                <h2 className="font-display text-[clamp(26px,3vw,40px)] leading-[1.12] tracking-tight mb-4 whitespace-pre-line text-[var(--text-primary)]">
+                  {side.headline}
+                </h2>
+                <p className="text-[14px] text-[var(--text-secondary)] leading-[1.7] mb-7 max-w-xs">{side.sub}</p>
+                <ul className="space-y-2.5 mb-8">
+                  {side.items.map(it => (
+                    <li key={it} className="flex items-center gap-2.5 text-[13px] text-[var(--text-secondary)]">
+                      <CheckCircle size={14} style={{ color: side.tagColor, flexShrink: 0 }} />{it}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className="px-5 py-2.5 rounded-xl text-[14px] font-semibold text-white transition-all duration-200 hover:opacity-90 hover:shadow-lg"
+                  style={{ background: side.tagColor, boxShadow: `0 4px 16px ${side.tagColor}30` }}>
+                  {side.cta}
+                </button>
               </div>
-              <h3 className="font-display text-[28px] mb-2">For Recruiters</h3>
-              <p className="text-[14px] text-[var(--text-secondary)] mb-6 leading-relaxed">Find pre-verified talent and hire with confidence.</p>
-              <ul className="text-[13px] text-[var(--text-secondary)] space-y-3 mb-8">
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Discover pre-verified, job-ready talent</li>
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Build custom evaluation pipelines</li>
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Compare candidates side-by-side</li>
-                <li className="flex items-start gap-2.5"><CheckCircle size={16} className="text-[var(--green)] mt-0.5 flex-shrink-0" /> Reduce mis-hires with data-driven insights</li>
-              </ul>
-              <Button className="w-full h-11 text-[14px] bg-[var(--green)] hover:bg-[var(--emerald)]">Get Started as Recruiter <ArrowRight size={14} /></Button>
             </div>
-          </div>
+          ))}
         </section>
 
         {/* ── Stats ── */}
-        <div className="section-line" />
-        <section className="bg-[var(--bg-surface)]/60 glass border-y border-[var(--border-subtle)]">
-          <div className="max-w-[1200px] mx-auto px-8 py-16 grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map(s => (
-              <StatCounter key={s.label} value={s.value} suffix={s.suffix} label={s.label} icon={s.icon} />
-            ))}
+        <section className="bg-[var(--bg-surface)] border-b border-[var(--border-subtle)]">
+          <div className="max-w-[1100px] mx-auto">
+            <div className="text-center pt-16 pb-10">
+              <p className="text-[11px] font-bold uppercase tracking-[.15em] text-[var(--text-tertiary)] mb-4">By the numbers</p>
+              <h2 className="font-display text-[clamp(28px,4.5vw,48px)] tracking-tight leading-[1.1] text-[var(--text-primary)]">
+                The platform <em className="italic">actually</em> working
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[var(--border-subtle)]">
+              {statsData.map(s => (
+                <StatCounter key={s.label} value={s.value} suffix={s.suffix} label={s.label} sub={s.sub} color={s.color} />
+              ))}
+            </div>
           </div>
         </section>
 
         {/* ── Features ── */}
-        <section className="max-w-[1200px] mx-auto px-8 py-24">
-          <div className="text-center mb-14">
-            <p className="text-[12px] font-semibold uppercase tracking-widest text-[var(--accent)] mb-3">Platform Features</p>
-            <h3 className="font-display text-[40px] text-[var(--text-primary)] tracking-tight">Everything you need to hire smarter</h3>
-            <p className="text-[15px] text-[var(--text-secondary)] mt-3 max-w-xl mx-auto">From verified assessments to AI matching, SkillCred gives you tools to build a better hiring process.</p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 stagger">
-            {features.map(f => (
-              <div
-                key={f.title}
-                className="bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-6 transition-all duration-200 hover:shadow-lg hover:border-[var(--border-default)] hover:-translate-y-1 group"
-              >
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110"
-                  style={{ backgroundColor: `color-mix(in srgb, ${f.color} 12%, transparent)`, color: f.color }}>
-                  {f.icon}
-                </div>
-                <h4 className="text-[15px] font-semibold mb-2">{f.title}</h4>
-                <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed">{f.desc}</p>
+        <section ref={featRef as React.RefObject<HTMLElement>} className="py-24 px-[5%] bg-[var(--bg-base)]">
+          <div className="max-w-[1100px] mx-auto">
+            <div className="grid md:grid-cols-2 gap-12 items-center mb-16">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[.15em] text-[var(--text-tertiary)] mb-4">Why SkillCred</p>
+                <h2 className="font-display text-[clamp(28px,3.8vw,46px)] tracking-tight leading-[1.1] text-[var(--text-primary)]">
+                  Built for clarity<br />in a noisy market.
+                </h2>
               </div>
-            ))}
+              <p className="text-[15px] text-[var(--text-secondary)] leading-[1.8]">
+                Most hiring platforms optimize for volume. We optimize for precision — building every feature around:{' '}
+                <em className="italic text-[var(--text-primary)]">can this person actually do the job?</em>
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              {features.map((f, i) => (
+                <div
+                  key={f.title}
+                  className="relative bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-7 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[var(--border-default)]"
+                  style={{
+                    opacity: featInView ? 1 : 0,
+                    transform: featInView ? 'translateY(0)' : 'translateY(24px)',
+                    transition: `opacity .6s ${i * 0.1}s, transform .6s ${i * 0.1}s, box-shadow .2s, border-color .2s`,
+                  }}
+                >
+                  <span className="font-display text-[12px] text-[var(--text-tertiary)] absolute top-5 right-5">0{i + 1}</span>
+                  <div className="absolute top-0 right-0 w-28 h-28 pointer-events-none"
+                    style={{ background: `radial-gradient(circle at top right, ${f.color}12 0%, transparent 70%)` }} />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"
+                    style={{ background: f.color + '18', border: `1px solid ${f.color}28`, color: f.color }}>
+                    {f.icon}
+                  </div>
+                  <h3 className="text-[16px] font-bold mb-2.5 text-[var(--text-primary)]">{f.title}</h3>
+                  <p className="text-[14px] text-[var(--text-secondary)] leading-[1.65]">{f.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* ── How It Works ── */}
         <div className="section-line" />
-        <section className="bg-[var(--bg-surface)]/40">
-          <div className="max-w-[1200px] mx-auto px-8 py-24">
-            <div className="text-center mb-14">
-              <p className="text-[12px] font-semibold uppercase tracking-widest text-[var(--accent)] mb-3">How It Works</p>
-              <h3 className="font-display text-[40px] text-[var(--text-primary)] tracking-tight">Get started in 4 simple steps</h3>
+        <section className="bg-[var(--bg-surface)]/50 py-24 px-[5%]">
+          <div className="max-w-[860px] mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-[11px] font-bold uppercase tracking-[.15em] text-[var(--text-tertiary)] mb-4">How It Works</p>
+              <h2 className="font-display text-[clamp(28px,4vw,46px)] tracking-tight text-[var(--text-primary)]">
+                Three steps to better hiring
+              </h2>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 stagger">
+            <div className="grid md:grid-cols-3 gap-0 relative">
+              {/* Connecting line */}
+              <div className="hidden md:block absolute top-[26px] left-[20%] w-[60%] h-px"
+                style={{ background: 'linear-gradient(90deg, transparent, var(--border-default), transparent)' }} />
               {steps.map((s, i) => (
-                <div key={s.num} className="relative text-center group">
-                  {i < steps.length - 1 && (
-                    <div className="hidden lg:block absolute top-7 left-[calc(50%+36px)] w-[calc(100%-72px)] h-[2px] border-t-2 border-dashed border-[var(--border-default)]" />
-                  )}
-                  <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center transition-all duration-200 group-hover:bg-[var(--accent)] group-hover:text-white group-hover:shadow-lg group-hover:shadow-[var(--accent)]/20">
+                <div key={s.num} className="text-center px-8 group">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5 relative z-10 transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg"
+                    style={{ background: s.color + '18', border: `1px solid ${s.color}30`, color: s.color, boxShadow: `0 0 0 0 ${s.color}30` }}>
                     {s.icon}
                   </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--accent)] mb-1 block font-mono">Step {s.num}</span>
-                  <h4 className="text-[15px] font-semibold mb-2">{s.title}</h4>
-                  <p className="text-[13px] text-[var(--text-secondary)] leading-relaxed max-w-[200px] mx-auto">{s.desc}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-widest mb-2.5" style={{ color: s.color }}>{s.num}</p>
+                  <h3 className="text-[16px] font-bold mb-2.5 text-[var(--text-primary)]">{s.title}</h3>
+                  <p className="text-[13px] text-[var(--text-secondary)] leading-[1.65]">{s.desc}</p>
                 </div>
               ))}
             </div>
@@ -326,45 +411,49 @@ export default function Landing() {
         <div className="section-line" />
 
         {/* ── Final CTA ── */}
-        <section className="max-w-[1200px] mx-auto px-8 py-24">
-          <div className="relative bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-14 text-center overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent-subtle)] via-transparent to-[var(--green-bg)] opacity-60" />
-            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[var(--accent)] rounded-full opacity-[0.04] -translate-y-1/2 translate-x-1/2 blur-3xl" />
-            <div className="relative">
-              <h3 className="font-display text-[36px] text-[var(--text-primary)] tracking-tight mb-3">Ready to transform your hiring?</h3>
-              <p className="text-[15px] text-[var(--text-secondary)] max-w-lg mx-auto mb-8">Join thousands of students and recruiters already using SkillCred to build better careers and teams.</p>
-              <div className="flex items-center justify-center gap-3">
-                <Button onClick={() => nav('/auth/signup/student')} className="h-11 px-7 text-[14px] shadow-lg shadow-[var(--accent)]/20">
-                  Get Started Free <ArrowRight size={16} />
-                </Button>
-                <Button variant="secondary" onClick={() => nav('/auth/login')} className="h-11 px-7 text-[14px]">
-                  Sign In
-                </Button>
+        <section className="py-24 px-[5%]">
+          <div className="max-w-[740px] mx-auto">
+            <div className="relative bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[var(--radius-xl)] py-16 px-12 text-center overflow-hidden">
+              {/* Dot grid background */}
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ backgroundImage: 'radial-gradient(var(--border-subtle) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+              {/* Center glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70%] h-[70%] pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(99,102,241,.06) 0%, transparent 70%)' }} />
+              <div className="relative z-10">
+                <h2 className="font-display text-[clamp(26px,4vw,46px)] tracking-tight leading-[1.1] mb-4 text-[var(--text-primary)]">
+                  Stop guessing.<br />
+                  <em className="italic text-[var(--accent)]">Start knowing.</em>
+                </h2>
+                <p className="text-[15px] text-[var(--text-secondary)] mb-10 leading-[1.7] max-w-md mx-auto">
+                  Join thousands of students and recruiters building a better hiring experience.
+                </p>
+                <div className="flex gap-3 justify-center flex-wrap">
+                  <Button onClick={() => nav('/auth/signup/student')} className="h-11 px-7 text-[14px] shadow-lg shadow-[var(--accent)]/20">
+                    Get started free
+                  </Button>
+                  <Button variant="secondary" onClick={() => nav('/auth/signup/recruiter')} className="h-11 px-7 text-[14px]">
+                    For recruiters →
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* ── Footer ── */}
-        <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]/60 glass">
-          <div className="max-w-[1200px] mx-auto px-8 py-10">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-[var(--accent)] flex items-center justify-center">
-                  <Sparkles size={12} className="text-white" />
-                </div>
-                <span className="text-lg font-bold">Skill<span className="text-[var(--accent)]">Cred</span></span>
-              </div>
-              <div className="flex gap-8 text-[13px] text-[var(--text-secondary)]">
-                <span className="hover:text-[var(--text-primary)] cursor-pointer transition-colors">About</span>
-                <span className="hover:text-[var(--text-primary)] cursor-pointer transition-colors">Privacy</span>
-                <span className="hover:text-[var(--text-primary)] cursor-pointer transition-colors">Terms</span>
-                <span className="hover:text-[var(--text-primary)] cursor-pointer transition-colors">Contact</span>
-              </div>
+        <footer className="border-t border-[var(--border-subtle)] glass">
+          <div className="max-w-[1100px] mx-auto px-[5%] py-9 flex flex-col md:flex-row items-center justify-between gap-5 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Logo size={18} />
+              <span className="text-[15px] font-bold">Skill<span className="text-[var(--accent)]">Cred</span></span>
             </div>
-            <div className="mt-8 pt-6 border-t border-[var(--border-subtle)] text-[12px] text-[var(--text-tertiary)]">
-              &copy; {new Date().getFullYear()} SkillCred. All rights reserved.
+            <div className="flex gap-6 text-[13px] text-[var(--text-secondary)]">
+              {['Privacy', 'Terms', 'Blog', 'Careers', 'Contact'].map(l => (
+                <span key={l} className="hover:text-[var(--text-primary)] cursor-pointer transition-colors">{l}</span>
+              ))}
             </div>
+            <span className="text-[12px] text-[var(--text-tertiary)]">© {new Date().getFullYear()} SkillCred, Inc.</span>
           </div>
         </footer>
       </div>

@@ -41,28 +41,28 @@ export default function CandidateDiscovery() {
     <PageTransition>
       <div className="mb-6">
         <h1 className="font-display text-[32px] tracking-tight">Candidates</h1>
-        <p className="text-[13px] text-[var(--text-secondary)] mt-1">Discover and evaluate verified student talent.</p>
+        <p className="text-[13px] text-(--text-secondary) mt-1">Discover and evaluate verified student talent.</p>
       </div>
 
       <div className="flex gap-6">
         {/* Filter sidebar */}
-        <div className="w-[220px] flex-shrink-0 hidden lg:block">
+        <div className="w-55 shrink-0 hidden lg:block">
           <Card className="p-5 sticky top-20">
             <h3 className="text-[13px] font-semibold mb-4 flex items-center gap-2"><Filter size={14} /> Filters</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] mb-2">Min Readiness</label>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-(--text-tertiary) mb-2">Min Readiness</label>
                 <input type="range" min={0} max={100} value={minReadiness} onChange={e => setMinReadiness(Number(e.target.value))} className="w-full" />
-                <span className="font-[var(--font-mono)] text-xs text-[var(--text-secondary)]">{minReadiness}%+</span>
+                <span className="font-(--font-mono) text-xs text-(--text-secondary)">{minReadiness}%+</span>
               </div>
               <div>
-                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
+                <label className="flex items-center gap-2 text-sm text-(--text-secondary) cursor-pointer">
                   <input type="checkbox" checked={hasGitHub} onChange={e => setHasGitHub(e.target.checked)} className="rounded" />
                   Has GitHub
                 </label>
               </div>
               <div>
-                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
+                <label className="flex items-center gap-2 text-sm text-(--text-secondary) cursor-pointer">
                   <input type="checkbox" checked={hasProjects} onChange={e => setHasProjects(e.target.checked)} className="rounded" />
                   Has Projects
                 </label>
@@ -75,28 +75,28 @@ export default function CandidateDiscovery() {
         <div className="flex-1">
           <div className="flex gap-3 mb-4">
             <div className="flex-1 relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-tertiary)" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Search candidates..."
-                className="w-full h-[38px] pl-9 pr-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)]"
+                className="w-full h-9.5 pl-9 pr-3 border border-(--border-default) bg-(--bg-surface) rounded-sm text-sm focus:outline-none focus:border-(--accent) focus:ring-[3px] focus:ring-(--accent-subtle)"
               />
             </div>
-            <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="h-[38px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm">
+            <select value={sortBy} onChange={e => setSortBy(e.target.value as typeof sortBy)} className="h-9.5 px-3 border border-(--border-default) bg-(--bg-surface) rounded-sm text-sm">
               <option value="match">Sort: Match %</option>
               <option value="readiness">Sort: Readiness</option>
               <option value="recent">Sort: Most Recent</option>
             </select>
-            <div className="flex border border-[var(--border-default)] rounded-[var(--radius-sm)] overflow-hidden">
-              <button onClick={() => setViewMode('grid')} className={`p-2 ${viewMode === 'grid' ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-tertiary)]'}`}><LayoutGrid size={16} /></button>
-              <button onClick={() => setViewMode('list')} className={`p-2 ${viewMode === 'list' ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'text-[var(--text-tertiary)]'}`}><List size={16} /></button>
+            <div className="flex border border-(--border-default) rounded-sm overflow-hidden">
+              <button onClick={() => setViewMode('grid')} className={`p-2 ${viewMode === 'grid' ? 'bg-(--accent-subtle) text-(--accent)' : 'text-(--text-tertiary)'}`}><LayoutGrid size={16} /></button>
+              <button onClick={() => setViewMode('list')} className={`p-2 ${viewMode === 'list' ? 'bg-(--accent-subtle) text-(--accent)' : 'text-(--text-tertiary)'}`}><List size={16} /></button>
             </div>
           </div>
 
           {filtered.length === 0 && (
             <Card className="p-10 text-center">
-              <p className="text-[var(--text-tertiary)]">No candidates match your filters.</p>
+              <p className="text-(--text-tertiary)">No candidates match your filters.</p>
             </Card>
           )}
 
@@ -107,7 +107,7 @@ export default function CandidateDiscovery() {
                   <Avatar name={c.name} size={40} />
                   <div className="flex-1">
                     <p className="text-[15px] font-semibold">{c.name}</p>
-                    <p className="text-[13px] text-[var(--text-secondary)]">{c.university}</p>
+                    <p className="text-[13px] text-(--text-secondary)">{c.university}</p>
                   </div>
                   <Badge variant="accent">{c.matchPercent}%</Badge>
                 </div>

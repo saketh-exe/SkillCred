@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Moon, Sun, Sparkles } from 'lucide-react';
+import { LogOut, Moon, Sun } from 'lucide-react';
+import Logo from './ui/Logo';
 import { useAuth } from '../context/AuthContext';
 import { Avatar } from './ui';
 import { useEffect, useState } from 'react';
@@ -23,9 +24,7 @@ export default function DashboardNav() {
     <header className="h-14 glass border-b border-[var(--border-subtle)] flex items-center px-6 flex-shrink-0 sticky top-0 z-40">
       <div className="w-full flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center">
-            <Sparkles size={14} className="text-white" />
-          </div>
+          <Logo size={22} />
           <span className="text-lg font-bold text-[var(--text-primary)]">Skill<span className="text-[var(--accent)]">Cred</span></span>
         </div>
         <div className="flex items-center gap-3">

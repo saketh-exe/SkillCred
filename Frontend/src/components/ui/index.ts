@@ -1,5 +1,8 @@
 export { default as Button } from './Button';
 export { default as Badge } from './Badge';
+export { default as Icon } from './Icon';
+export type { IcoName } from './Icon';
+export { default as Logo } from './Logo';
 export { default as Card } from './Card';
 export { default as ProgressBar } from './ProgressBar';
 export { default as Modal } from './Modal';

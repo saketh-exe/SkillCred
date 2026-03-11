@@ -32,7 +32,7 @@ router.patch("/profile", async (req: AuthRequest, res) => {
     for (const key of allowed) {
       if (key in req.body) update[key] = req.body[key];
     }
-    const user = await UserBase.findByIdAndUpdate(req.userId, update, { new: true });
+    const user = await UserBase.findByIdAndUpdate(req.userId, update, { returnDocument: 'after' });
     if (!user) return res.status(404).json({ error: "User not found" });
     res.json(user);
   } catch {
@@ -85,7 +85,7 @@ router.patch("/jobs/:id", async (req: AuthRequest, res) => {
     const job = await JobPosting.findOneAndUpdate(
       { _id: req.params["id"], recruiterId: req.userId },
       req.body,
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!job) return res.status(404).json({ error: "Job not found" });
     res.json({ ...(job.toJSON() as Record<string, unknown>), id: String(job._id) });
@@ -276,7 +276,7 @@ router.patch("/pipeline/:jobId/move", async (req: AuthRequest, res) => {
     const app = await Application.findOneAndUpdate(
       { jobId: job._id, studentId },
       { $set: setFields },
-      { new: true }
+      { returnDocument: 'after' }
     );
     console.log(`[move] application update result: ${app ? `_id=${String(app._id)} pipelineStage=${(app as unknown as { pipelineStage: number }).pipelineStage}` : "NOT FOUND"}`);
     if (!app) return res.status(404).json({ error: "Application not found" });
@@ -306,7 +306,7 @@ router.patch("/pipeline/:jobId/reject", async (req: AuthRequest, res) => {
     const app = await Application.findOneAndUpdate(
       { jobId: job._id, studentId },
       { $set: { status: "Rejected" } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!app) return res.status(404).json({ error: "Application not found" });
     try {
@@ -333,7 +333,7 @@ router.patch("/pipeline/:jobId/hire", async (req: AuthRequest, res) => {
     const app = await Application.findOneAndUpdate(
       { jobId: job._id, studentId },
       { $set: { status: "Hired" } },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!app) return res.status(404).json({ error: "Application not found" });
     try {
@@ -442,7 +442,7 @@ router.patch("/notifications/:id/read", async (req: AuthRequest, res) => {
     const note = await Notification.findOneAndUpdate(
       { _id: req.params["id"], userId: req.userId },
       { read: true },
-      { new: true }
+      { returnDocument: 'after' }
     );
     if (!note) return res.status(404).json({ error: "Notification not found" });
     res.json({ ok: true });

@@ -595,10 +595,10 @@ export default function ProfileBuilder() {
               <h3 className="text-[15px] font-semibold mb-4">Profile Info</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Public Repos</span><span className="font-[var(--font-mono)] font-medium">{githubAnalysis.profile.publicRepos}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Following</span><span className="font-[var(--font-mono)] font-medium">{githubAnalysis.profile.following}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Own Repos</span><span className="font-[var(--font-mono)] font-medium">{githubAnalysis.summary.ownRepos}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Contributed Forks</span><span className="font-[var(--font-mono)] font-medium">{githubAnalysis.summary.forkedRepos}</span></div>
-                <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Total Forks</span><span className="font-[var(--font-mono)] font-medium">{githubAnalysis.summary.totalForks}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Following</span><span className="font-medium">{githubAnalysis.profile.following}</span></div>
+                <div className="flex justify-between"><span className="text-(--text-secondary)">Own Repos</span><span className="font-medium">{githubAnalysis.summary.ownRepos}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Contributed Forks</span><span className="font-(--font-mono)">{githubAnalysis.summary.forkedRepos}</span></div>
+                <div className="flex justify-between"><span className="text-(--text-secondary)">Total Forks</span><span className="font-[var(--font-mono)]">{githubAnalysis.summary.totalForks}</span></div>
                 {githubAnalysis.summary.topLanguage && (
                   <div className="flex justify-between"><span className="text-[var(--text-secondary)]">Top Language</span><Badge variant="accent">{githubAnalysis.summary.topLanguage}</Badge></div>
                 )}
@@ -614,7 +614,7 @@ export default function ProfileBuilder() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[15px] font-semibold">Repositories</h3>
-              <span className="text-[12px] text-[var(--text-tertiary)]">Showing {visibleRepos.length} of {githubAnalysis.repositories.length} analyzed</span>
+              <span className="text-[12px] text-(--text-tertiary)">Showing {visibleRepos.length} of {githubAnalysis.repositories.length} analyzed</span>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               {visibleRepos.map(repo => <RepoCard key={repo.name} repo={repo} />)}
