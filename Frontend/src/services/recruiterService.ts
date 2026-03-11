@@ -53,7 +53,10 @@ export const recruiterService = {
       fs.map(f => withId(f as Feedback & Partial<ApiDoc>))
     ),
 
-  submitFeedback: (data: Omit<Feedback, 'id'>) =>
+  submitFeedback: (data: {
+    studentId: string; jobId: string; role: string;
+    strengths: string[]; improvements: string[]; notes?: string; rating: number;
+  }) =>
     apiFetch<Feedback>('/recruiter/feedback', {
       method: 'POST', body: JSON.stringify(data),
     }).then(withId),
@@ -93,4 +96,16 @@ export const recruiterService = {
     apiFetch<Candidate[]>('/recruiter/compare', {
       method: 'POST', body: JSON.stringify({ ids }),
     }).then(cs => cs.map(c => withId(c as Candidate & Partial<ApiDoc>))),
+
+  rejectCandidate: (jobId: string, studentId: string) =>
+    apiFetch<{ ok: boolean }>(`/recruiter/pipeline/${jobId}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify({ studentId }),
+    }),
+
+  hireCandidate: (jobId: string, studentId: string) =>
+    apiFetch<{ ok: boolean }>(`/recruiter/pipeline/${jobId}/hire`, {
+      method: 'PATCH',
+      body: JSON.stringify({ studentId }),
+    }),
 };

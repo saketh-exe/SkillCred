@@ -227,6 +227,42 @@ router.post("/applications", async (req: AuthRequest, res) => {
   }
 });
 
+// ── Profile Data (resume / github / credibility) ──────────────
+// GET /api/student/profile-data
+router.get("/profile-data", async (req: AuthRequest, res) => {
+  try {
+    const user = await UserBase.findById(req.userId);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const u = user as unknown as { parsedResume?: unknown; githubAnalysis?: unknown; credibilityReport?: unknown };
+    res.json({
+      parsedResume: u.parsedResume ?? null,
+      githubAnalysis: u.githubAnalysis ?? null,
+      credibilityReport: u.credibilityReport ?? null,
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch profile data" });
+  }
+});
+
+// PATCH /api/student/profile-data
+router.patch("/profile-data", async (req: AuthRequest, res) => {
+  try {
+    const { parsedResume, githubAnalysis, credibilityReport } = req.body as {
+      parsedResume?: unknown;
+      githubAnalysis?: unknown;
+      credibilityReport?: unknown;
+    };
+    const update: Record<string, unknown> = {};
+    if (parsedResume !== undefined) update["parsedResume"] = parsedResume;
+    if (githubAnalysis !== undefined) update["githubAnalysis"] = githubAnalysis;
+    if (credibilityReport !== undefined) update["credibilityReport"] = credibilityReport;
+    await UserBase.findByIdAndUpdate(req.userId, { $set: update });
+    res.json({ ok: true });
+  } catch {
+    res.status(500).json({ error: "Failed to save profile data" });
+  }
+});
+
 // ── Feedback ──────────────────────────────────────────────────
 // GET /api/student/feedback
 router.get("/feedback", async (req: AuthRequest, res) => {

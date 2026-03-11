@@ -4,13 +4,15 @@ import { Card, Badge, Button, Avatar } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import PageTransition from '../../components/PageTransition';
 import { recruiterService } from '../../services/recruiterService';
-import type { Feedback as FeedbackType, Candidate } from '../../types';
+import type { Feedback as FeedbackType, Candidate, JobPosting } from '../../types';
 
 export default function RecruiterFeedback() {
   const { addToast } = useToast();
   const [feedbackList, setFeedbackList] = useState<FeedbackType[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState('');
+  const [selectedJob, setSelectedJob] = useState('');
   const [rating, setRating] = useState(4);
   const [strengths, setStrengths] = useState('');
   const [improvements, setImprovements] = useState('');
@@ -19,16 +21,35 @@ export default function RecruiterFeedback() {
   useEffect(() => {
     recruiterService.getFeedback().then(setFeedbackList);
     recruiterService.getCandidates().then(setCandidates);
+    recruiterService.getJobPostings().then(setJobs);
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedCandidate) { addToast('Select a candidate first', 'error'); return; }
-    addToast('Feedback submitted successfully!', 'success');
-    setSelectedCandidate('');
-    setRating(4);
-    setStrengths('');
-    setImprovements('');
-    setComments('');
+    if (!selectedJob) { addToast('Select a job first', 'error'); return; }
+    const job = jobs.find(j => j.id === selectedJob);
+    if (!job) { addToast('Job not found', 'error'); return; }
+    try {
+      await recruiterService.submitFeedback({
+        studentId: selectedCandidate,
+        jobId: selectedJob,
+        role: job.title,
+        strengths: strengths.split('\n').map(s => s.trim()).filter(Boolean),
+        improvements: improvements.split('\n').map(s => s.trim()).filter(Boolean),
+        notes: comments.trim() || undefined,
+        rating,
+      });
+      addToast('Feedback submitted!', 'success');
+      recruiterService.getFeedback().then(setFeedbackList);
+      setSelectedCandidate('');
+      setSelectedJob('');
+      setRating(4);
+      setStrengths('');
+      setImprovements('');
+      setComments('');
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to submit feedback', 'error');
+    }
   };
 
   const inputClass = 'w-full h-[38px] px-3 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)]';
@@ -54,6 +75,13 @@ export default function RecruiterFeedback() {
                 </select>
               </div>
               <div>
+                <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Job Position</label>
+                <select value={selectedJob} onChange={e => setSelectedJob(e.target.value)} className={inputClass}>
+                  <option value="">Select job...</option>
+                  {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
+                </select>
+              </div>
+              <div>
                 <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Rating</label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map(s => (
@@ -65,11 +93,11 @@ export default function RecruiterFeedback() {
               </div>
               <div>
                 <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Strengths</label>
-                <textarea value={strengths} onChange={e => setStrengths(e.target.value)} rows={3} className="w-full px-3 py-2 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] resize-none" placeholder="What did they do well?" />
+                <textarea value={strengths} onChange={e => setStrengths(e.target.value)} rows={3} className="w-full px-3 py-2 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] resize-none" placeholder="What did they do well? (one per line)" />
               </div>
               <div>
                 <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Areas for Improvement</label>
-                <textarea value={improvements} onChange={e => setImprovements(e.target.value)} rows={3} className="w-full px-3 py-2 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] resize-none" placeholder="What could they improve?" />
+                <textarea value={improvements} onChange={e => setImprovements(e.target.value)} rows={3} className="w-full px-3 py-2 border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-[var(--radius-sm)] text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-[3px] focus:ring-[var(--accent-subtle)] resize-none" placeholder="What could they improve? (one per line)" />
               </div>
               <div>
                 <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-1.5">Additional Comments</label>

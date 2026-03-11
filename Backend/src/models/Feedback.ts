@@ -4,7 +4,7 @@ const FeedbackSchema = new Schema(
   {
     recruiterId: { type: Types.ObjectId, ref: "User", required: true },
     studentId: { type: Types.ObjectId, ref: "User", required: true },
-    jobId: { type: Types.ObjectId, ref: "JobPosting", required: true },
+    jobId: { type: Types.ObjectId, ref: "JobPosting" },
     company: { type: String, required: true },
     role: { type: String, required: true },
     recruiterName: { type: String, required: true },

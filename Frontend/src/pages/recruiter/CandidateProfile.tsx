@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Github } from 'lucide-react';
+import { ArrowLeft, Github, FileText } from 'lucide-react';
 import { Card, Badge, Avatar, Button, ProgressBar } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import PageTransition from '../../components/PageTransition';
@@ -114,6 +114,11 @@ export default function CandidateProfile() {
         <Button onClick={() => addToast(`${candidate.name} added to pipeline`, 'success')}>Add to Pipeline</Button>
         <Button variant="secondary">Send Message</Button>
         <Button variant="secondary">Add to Comparison</Button>
+        {candidate.resumeUrl && (
+          <a href={candidate.resumeUrl} target="_blank" rel="noopener noreferrer">
+            <Button variant="secondary"><FileText size={14} className="mr-1" />View Resume</Button>
+          </a>
+        )}
       </div>
     </PageTransition>
   );

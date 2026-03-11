@@ -161,7 +161,7 @@ export interface PipelineCandidate {
   avatarUrl?: string;
   stageId: string;
   score?: number;
-  status: 'active' | 'advanced' | 'rejected';
+  status: 'active' | 'advanced' | 'rejected' | 'hired';
   notes?: string;
 }
 
@@ -181,6 +181,7 @@ export interface Candidate {
   readinessScore: number;
   hasProjects: boolean;
   hasGitHub: boolean;
+  resumeUrl?: string | null;
   projects?: Project[];
   githubStats?: GitHubStats;
   assessmentScores?: { skill: string; score: number }[];

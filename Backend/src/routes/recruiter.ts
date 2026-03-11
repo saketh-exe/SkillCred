@@ -155,6 +155,7 @@ router.get("/candidates", async (req: AuthRequest, res) => {
         readinessScore: Math.max(0, matchPercent - 10),
         hasProjects: false,
         hasGitHub: false,
+        resumeUrl: (student as Record<string, unknown>)["resumeUrl"] ?? null,
         assessmentScores: skills
           .filter((s: { score?: number }) => s.score != null)
           .map((s: { name: string; score: number }) => ({ skill: s.name, score: s.score })),
@@ -196,6 +197,7 @@ router.get("/candidates/:id", async (req: AuthRequest, res) => {
       hasGitHub: false,
       matchPercent: 0,
       readinessScore: 0,
+      resumeUrl: s["resumeUrl"] ?? null,
       assessmentScores: skills
         .filter((s: { score?: number }) => s.score != null)
         .map((s: { name: string; score: number }) => ({ skill: s.name, score: s.score })),
@@ -227,7 +229,7 @@ router.get("/pipeline/:jobId", async (req: AuthRequest, res) => {
         avatarUrl: student?.avatarUrl,
         stageId: String(currentStage?._id ?? ""),
         score: a.stages?.[a.pipelineStage - 1]?.score,
-        status: a.status === "Rejected" ? "rejected" : "active",
+        status: a.status === "Rejected" ? "rejected" : a.status === "Hired" ? "hired" : "active",
       };
       console.log(`[getPipeline] candidate studentId=${mapped.id} pipelineStage=${a.pipelineStage} -> stageId=${mapped.stageId}`);
       return mapped;
@@ -279,10 +281,72 @@ router.patch("/pipeline/:jobId/move", async (req: AuthRequest, res) => {
     console.log(`[move] application update result: ${app ? `_id=${String(app._id)} pipelineStage=${(app as unknown as { pipelineStage: number }).pipelineStage}` : "NOT FOUND"}`);
     if (!app) return res.status(404).json({ error: "Application not found" });
 
+    try {
+      await Notification.create({
+        userId: new Types.ObjectId(studentId),
+        message: `Your application for "${(job as { title: string }).title}" has advanced to a new stage.`,
+        type: "info",
+      });
+    } catch (e) { console.warn("[move] notification error:", e); }
+
     res.json({ ok: true, pipelineStage: stageIndex });
   } catch (err) {
     console.error("[move] error:", err);
     res.status(500).json({ error: "Failed to move candidate" });
+  }
+});
+
+// PATCH /api/recruiter/pipeline/:jobId/reject
+router.patch("/pipeline/:jobId/reject", async (req: AuthRequest, res) => {
+  try {
+    const { studentId } = req.body as { studentId?: string };
+    if (!studentId) return res.status(400).json({ error: "studentId required" });
+    const job = await JobPosting.findOne({ _id: req.params["jobId"], recruiterId: req.userId });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+    const app = await Application.findOneAndUpdate(
+      { jobId: job._id, studentId },
+      { $set: { status: "Rejected" } },
+      { new: true }
+    );
+    if (!app) return res.status(404).json({ error: "Application not found" });
+    try {
+      await Notification.create({
+        userId: new Types.ObjectId(studentId),
+        message: `Your application for "${(job as { title: string }).title}" was not selected at this time.`,
+        type: "info",
+      });
+    } catch (e) { console.warn("[reject] notification error:", e); }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to reject candidate" });
+  }
+});
+
+// PATCH /api/recruiter/pipeline/:jobId/hire
+router.patch("/pipeline/:jobId/hire", async (req: AuthRequest, res) => {
+  try {
+    const { studentId } = req.body as { studentId?: string };
+    if (!studentId) return res.status(400).json({ error: "studentId required" });
+    const job = await JobPosting.findOne({ _id: req.params["jobId"], recruiterId: req.userId });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+    const app = await Application.findOneAndUpdate(
+      { jobId: job._id, studentId },
+      { $set: { status: "Hired" } },
+      { new: true }
+    );
+    if (!app) return res.status(404).json({ error: "Application not found" });
+    try {
+      await Notification.create({
+        userId: new Types.ObjectId(studentId),
+        message: `Congratulations! You have been selected for "${(job as { title: string }).title}".`,
+        type: "success",
+      });
+    } catch (e) { console.warn("[hire] notification error:", e); }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to hire candidate" });
   }
 });
 

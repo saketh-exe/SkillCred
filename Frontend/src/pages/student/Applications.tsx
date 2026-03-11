@@ -53,7 +53,7 @@ export default function Applications() {
                     <p className="text-[13px] text-[var(--text-secondary)]">{app.company}</p>
                   </div>
                   <Badge variant={statusVariant(app.status)}>
-                    {app.status}{app.status === 'In Pipeline' && app.pipelineStage != null ? ` — Stage ${app.pipelineStage} of ${app.pipelineTotal}` : ''}
+                    {app.status}{app.status === 'In Pipeline' && app.pipelineStage != null ? ` — Stage ${app.pipelineStage + 1} of ${app.pipelineTotal}` : ''}
                   </Badge>
                 </div>
                 <p className="text-[11px] text-[var(--text-tertiary)] mb-3">Applied {new Date(app.appliedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>

@@ -1,7 +1,7 @@
 import { apiFetch } from './api';
 import type {
   StudentUser, Skill, JobMatch, Application, Feedback,
-  SkillGap, Notification, Project,
+  SkillGap, Notification, Project, ParsedResume, GithubAnalysis, CredibilityReport,
 } from '../types';
 
 export const studentService = {
@@ -48,5 +48,16 @@ export const studentService = {
 
   // These remain local-only (resume/github data is already handled by ProfileDataContext)
   getProjects: (): Promise<Project[]> => Promise.resolve([]),
+
+  getProfileData: () =>
+    apiFetch<{ parsedResume: ParsedResume | null; githubAnalysis: GithubAnalysis | null; credibilityReport: CredibilityReport | null }>(
+      '/student/profile-data'
+    ),
+
+  saveProfileData: (data: { parsedResume?: ParsedResume | null; githubAnalysis?: GithubAnalysis | null; credibilityReport?: CredibilityReport | null }) =>
+    apiFetch<{ ok: boolean }>('/student/profile-data', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
 };
 

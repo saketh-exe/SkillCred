@@ -58,6 +58,10 @@ export interface IStudent extends IUserBase {
   targetRoles: string[];
   experienceLevel: "Beginner" | "Intermediate" | "Advanced";
   profileVisible: boolean;
+  parsedResume?: unknown;
+  githubAnalysis?: unknown;
+  credibilityReport?: unknown;
+  resumeUrl?: string;
 }
 
 const StudentSchema = new Schema<IStudent>({
@@ -68,6 +72,10 @@ const StudentSchema = new Schema<IStudent>({
   targetRoles: { type: [String], default: [] },
   experienceLevel: { type: String, enum: ["Beginner", "Intermediate", "Advanced"], default: "Beginner" },
   profileVisible: { type: Boolean, default: true },
+  parsedResume: { type: Schema.Types.Mixed, default: null },
+  githubAnalysis: { type: Schema.Types.Mixed, default: null },
+  credibilityReport: { type: Schema.Types.Mixed, default: null },
+  resumeUrl: { type: String, default: null },
 });
 
 export const Student: Model<IStudent> =

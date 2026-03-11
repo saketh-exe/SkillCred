@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Upload, Search, Github, FileText, Loader2, AlertCircle, CheckCircle2, ChevronDown, ChevronUp,
   Star, GitFork, ExternalLink, Code, Users, BookOpen, Calendar, FileCode, FilePlus, FileMinus, FileEdit,
@@ -7,6 +7,7 @@ import {
 import { Card, Badge, Button, ProgressBar } from '../../components/ui';
 import PageTransition from '../../components/PageTransition';
 import { useProfileData } from '../../context/ProfileDataContext';
+import { getToken } from '../../services/api';
 import type {
   GithubAnalysis, GithubRepoProfile, GithubCommitSummary, GithubCommitFile,
   ParsedResume, CredibilityReport,
@@ -223,7 +224,12 @@ type Tab = 'upload' | 'resume' | 'github' | 'credibility';
 export default function ProfileBuilder() {
   const fileRef = useRef<HTMLInputElement>(null);
   const profileData = useProfileData();
-  const [tab, setTab] = useState<Tab>('upload');
+  const [tab, setTab] = useState<Tab>(() => {
+    if (profileData.credibility) return 'credibility';
+    if (profileData.githubAnalysis) return 'github';
+    if (profileData.resume) return 'resume';
+    return 'upload';
+  });
 
   // Upload state
   const [file, setFile] = useState<File | null>(null);
@@ -232,13 +238,24 @@ export default function ProfileBuilder() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'idle' | 'resume' | 'github' | 'credibility' | 'done'>('idle');
 
-  // Results
-  const [resume, setResume] = useState<ParsedResume | null>(null);
-  const [githubAnalysis, setGithubAnalysis] = useState<GithubAnalysis | null>(null);
-  const [credibility, setCredibility] = useState<CredibilityReport | null>(null);
+  // Results — init from saved context data
+  const [resume, setResume] = useState<ParsedResume | null>(profileData.resume);
+  const [githubAnalysis, setGithubAnalysis] = useState<GithubAnalysis | null>(profileData.githubAnalysis);
+  const [credibility, setCredibility] = useState<CredibilityReport | null>(profileData.credibility);
 
   // GitHub display
   const [showAllRepos, setShowAllRepos] = useState(false);
+
+  // Sync local state when context updates (e.g. loaded from backend after mount)
+  useEffect(() => {
+    if (profileData.resume && !resume) {
+      setResume(profileData.resume);
+      setTab(t => t === 'upload' ? 'resume' : t);
+    }
+    if (profileData.githubAnalysis && !githubAnalysis) setGithubAnalysis(profileData.githubAnalysis);
+    if (profileData.credibility && !credibility) setCredibility(profileData.credibility);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileData.resume, profileData.githubAnalysis, profileData.credibility]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -265,7 +282,10 @@ export default function ProfileBuilder() {
         setStep('resume');
         const form = new FormData();
         form.append('resume', file);
-        const res = await fetch('/api/resumes', { method: 'POST', body: form });
+        const token = getToken();
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/resumes', { method: 'POST', body: form, headers });
         if (!res.ok) {
           const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
           throw new Error(body.error ?? 'Failed to parse resume');
@@ -317,7 +337,7 @@ export default function ProfileBuilder() {
     } finally {
       setLoading(false);
     }
-  }, [file, githubUsername]);
+  }, [file, githubUsername, profileData]);
 
   const visibleRepos = showAllRepos ? githubAnalysis?.repositories ?? [] : (githubAnalysis?.repositories ?? []).slice(0, 6);
   const topLangs = (githubAnalysis?.languages ?? []).slice(0, 8);

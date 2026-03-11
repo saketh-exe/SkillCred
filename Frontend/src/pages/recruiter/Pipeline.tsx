@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { Card, Badge, Avatar } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import PageTransition from '../../components/PageTransition';
@@ -62,6 +63,28 @@ export default function Pipeline() {
     }
   };
 
+  const rejectCandidate = async (candidateId: string) => {
+    try {
+      await recruiterService.rejectCandidate(selectedJob, candidateId);
+      addToast('Candidate rejected', 'info');
+      const data = await recruiterService.getPipeline(selectedJob);
+      setColumns(data.stages.map(s => ({ ...s, candidates: data.candidates.filter(c => c.stageId === s.id) })));
+    } catch {
+      addToast('Failed to reject candidate', 'error');
+    }
+  };
+
+  const hireCandidate = async (candidateId: string) => {
+    try {
+      await recruiterService.hireCandidate(selectedJob, candidateId);
+      addToast('Candidate hired!', 'success');
+      const data = await recruiterService.getPipeline(selectedJob);
+      setColumns(data.stages.map(s => ({ ...s, candidates: data.candidates.filter(c => c.stageId === s.id) })));
+    } catch {
+      addToast('Failed to hire candidate', 'error');
+    }
+  };
+
   const stageColor = (type: string) => {
     switch (type) {
       case 'Profile Review': return '#6366f1';
@@ -107,19 +130,31 @@ export default function Pipeline() {
                   </div>
                   <div className="flex items-center justify-between mb-2">
                     {c.score != null && <Badge variant="accent">{c.score} pts</Badge>}
-                    <Badge variant={c.status === 'active' ? 'success' : c.status === 'rejected' ? 'danger' : 'neutral'}>{c.status}</Badge>
+                    <Badge variant={c.status === 'active' ? 'success' : c.status === 'rejected' ? 'danger' : c.status === 'hired' ? 'accent' : 'neutral'}>{c.status}</Badge>
                   </div>
                   <div className="flex gap-1">
-                    {stageIdx > 0 && (
+                    {c.status === 'active' && stageIdx > 0 && (
                       <button onClick={() => moveCandidate(c.id, stage.id, columns[stageIdx - 1].id)}
                         className="flex-1 h-6 text-[10px] font-medium bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded hover:bg-[var(--accent-subtle)] transition-colors">
                         &larr; Back
                       </button>
                     )}
-                    {stageIdx < columns.length - 1 && (
+                    {c.status === 'active' && stageIdx < columns.length - 1 && (
                       <button onClick={() => moveCandidate(c.id, stage.id, columns[stageIdx + 1].id)}
                         className="flex-1 h-6 text-[10px] font-medium bg-[var(--accent)] text-white rounded hover:opacity-90 transition-colors">
                         Advance &rarr;
+                      </button>
+                    )}
+                    {c.status === 'active' && stageIdx === columns.length - 1 && (
+                      <button onClick={() => hireCandidate(c.id)}
+                        className="flex-1 h-6 text-[10px] font-medium bg-[var(--success)] text-white rounded hover:opacity-90 transition-colors">
+                        ✓ Hire
+                      </button>
+                    )}
+                    {c.status === 'active' && (
+                      <button onClick={() => rejectCandidate(c.id)}
+                        className="h-6 w-6 flex items-center justify-center text-[var(--danger)] border border-[var(--border-subtle)] rounded hover:bg-[var(--danger)] hover:text-white transition-colors flex-shrink-0">
+                        <X size={10} />
                       </button>
                     )}
                   </div>
