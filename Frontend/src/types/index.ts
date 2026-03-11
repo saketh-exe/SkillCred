@@ -235,3 +235,114 @@ export interface Organization {
   about: string;
   teamMembers: { name: string; email: string; role: string }[];
 }
+
+// ─── GitHub Analysis ────────────────────────────────────────────
+export interface GithubLanguageProfile {
+  name: string;
+  bytes: number;
+  percentage: number;
+  repoCount: number;
+  significanceScore: number;
+}
+
+export interface GithubCommitFile {
+  filename: string;
+  status: 'added' | 'modified' | 'removed' | 'renamed' | 'copied' | 'changed' | 'unchanged';
+  additions: number;
+  deletions: number;
+}
+
+export interface GithubCommitSummary {
+  sha: string;
+  message: string;
+  date: string;
+  url: string;
+  files: GithubCommitFile[];
+}
+
+export interface GithubRepoProfile {
+  name: string;
+  description: string | null;
+  url: string;
+  stars: number;
+  forks: number;
+  primaryLanguage: string | null;
+  languages: Record<string, number>;
+  significanceScore: number;
+  isFork: boolean;
+  lastPushed: string;
+  recentCommits: GithubCommitSummary[];
+}
+
+export interface GithubAnalysis {
+  profile: {
+    username: string;
+    name: string | null;
+    bio: string | null;
+    publicRepos: number;
+    followers: number;
+    following: number;
+    avatarUrl: string;
+    profileUrl: string;
+    memberSince: string;
+  };
+  languages: GithubLanguageProfile[];
+  repositories: GithubRepoProfile[];
+  summary: {
+    totalReposAnalyzed: number;
+    ownRepos: number;
+    forkedRepos: number;
+    totalCodeBytes: number;
+    topLanguage: string | null;
+    mostSignificantRepo: string | null;
+    totalStars: number;
+    totalForks: number;
+  };
+}
+
+// ─── Resume Parsing ─────────────────────────────────────────────
+export interface ResumeProject {
+  name: string;
+  description: string | null;
+  github: string | null;
+  technologies: string[];
+}
+
+export interface ResumeInternship {
+  company: string;
+  role: string;
+  duration: string | null;
+  description: string | null;
+}
+
+export interface ParsedResume {
+  github: { username: string | null; url: string | null } | null;
+  skills: string[];
+  projects: ResumeProject[];
+  internships: ResumeInternship[];
+}
+
+// ─── Credibility Report ─────────────────────────────────────────
+export interface CredibilitySkillAnalysis {
+  skill: string;
+  claimedLevel: string;
+  evidenceFound: string;
+  credibilityScore: number;
+}
+
+export interface CredibilityProjectAnalysis {
+  project: string;
+  claimsVerified: string[];
+  discrepancies: string[];
+  credibilityScore: number;
+}
+
+export interface CredibilityReport {
+  overallScore: number;
+  summary: string;
+  skillsAnalysis: CredibilitySkillAnalysis[];
+  projectsAnalysis: CredibilityProjectAnalysis[];
+  strengths: string[];
+  redFlags: string[];
+  recommendations: string[];
+}

@@ -1,10 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../../components/ui';
-import { LayoutDashboard, BarChart3, Briefcase, FileText, MessageSquare, User } from 'lucide-react';
+import { LayoutDashboard, BarChart3, Briefcase, FileText, MessageSquare, User, UserPlus } from 'lucide-react';
 import DashboardNav from '../../components/DashboardNav';
 
 const navItems = [
   { label: 'Dashboard', to: '/student/dashboard', icon: <LayoutDashboard size={18} /> },
+  { label: 'Profile Builder', to: '/student/profile-builder', icon: <UserPlus size={18} /> },
   { label: 'Skill Gap Analysis', to: '/student/gap-analysis', icon: <BarChart3 size={18} /> },
   { label: 'Job Matches', to: '/student/jobs', icon: <Briefcase size={18} /> },
   { label: 'Applications', to: '/student/applications', icon: <FileText size={18} /> },

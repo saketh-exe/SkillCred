@@ -11,6 +11,7 @@ import RecruiterSignup from './pages/auth/RecruiterSignup'
 import StudentLayout from './pages/student/StudentLayout'
 import StudentDashboard from './pages/student/Dashboard'
 import SkillGapAnalysis from './pages/student/SkillGapAnalysis'
+import ProfileBuilder from './pages/student/ProfileBuilder'
 import JobMatches from './pages/student/JobMatches'
 import Applications from './pages/student/Applications'
 import StudentFeedback from './pages/student/Feedback'
@@ -40,6 +41,7 @@ function App() {
       <Route path="/student" element={<ProtectedRoute role="student"><StudentLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="profile-builder" element={<ProfileBuilder />} />
         <Route path="gap-analysis" element={<SkillGapAnalysis />} />
         <Route path="jobs" element={<JobMatches />} />
         <Route path="applications" element={<Applications />} />

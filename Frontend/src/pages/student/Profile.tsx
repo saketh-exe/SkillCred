@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, Badge, Avatar, Button } from '../../components/ui';
 import { ToggleTheme } from '@/components/ui/toggle-theme';
 import PageTransition from '../../components/PageTransition';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
 import { useToast } from '../../components/ui/Toast';
-import type { Skill, Project, StudentUser } from '../../types';
+import { Upload, Loader2, CheckCircle2 } from 'lucide-react';
+import type { Skill, Project, StudentUser, ParsedResume } from '../../types';
 
 export default function StudentProfile() {
   const { user } = useAuth();
@@ -14,6 +15,9 @@ export default function StudentProfile() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [visible, setVisible] = useState(true);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeData, setResumeData] = useState<ParsedResume | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     studentService.getSkills().then(setSkills);
@@ -21,6 +25,25 @@ export default function StudentProfile() {
   }, []);
 
   const verifiedSkills = skills.filter(s => s.status === 'Verified');
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResumeUploading(true);
+    try {
+      const form = new FormData();
+      form.append('resume', file);
+      const res = await fetch('/api/resumes', { method: 'POST', body: form });
+      if (!res.ok) throw new Error('Upload failed');
+      const data: ParsedResume = await res.json();
+      setResumeData(data);
+      addToast('Resume parsed successfully!', 'success');
+    } catch {
+      addToast('Failed to parse resume', 'error');
+    } finally {
+      setResumeUploading(false);
+    }
+  };
 
   if (!student) return null;
 
@@ -119,6 +142,35 @@ export default function StudentProfile() {
             </div>
             <ToggleTheme />
           </div>
+        </Card>
+
+        {/* Resume Upload */}
+        <Card className="p-6">
+          <h2 className="text-[15px] font-semibold mb-4">Resume</h2>
+          <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={handleResumeUpload} />
+          {resumeData ? (
+            <div>
+              <div className="flex items-center gap-2 mb-3 text-[var(--success)]">
+                <CheckCircle2 size={16} />
+                <span className="text-sm font-medium">Resume parsed</span>
+              </div>
+              <div className="space-y-2 text-sm">
+                <p className="text-[var(--text-secondary)]"><span className="font-medium">{resumeData.skills.length}</span> skills extracted</p>
+                <p className="text-[var(--text-secondary)]"><span className="font-medium">{resumeData.projects.length}</span> projects found</p>
+                <p className="text-[var(--text-secondary)]"><span className="font-medium">{resumeData.internships.length}</span> experiences found</p>
+              </div>
+              <Button variant="secondary" onClick={() => fileRef.current?.click()} className="mt-3 w-full" disabled={resumeUploading}>
+                {resumeUploading ? <><Loader2 size={14} className="animate-spin" /> Parsing...</> : 'Upload New Resume'}
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-[var(--text-secondary)] mb-3">Upload your resume to auto-extract skills and experience.</p>
+              <Button onClick={() => fileRef.current?.click()} className="w-full" disabled={resumeUploading}>
+                {resumeUploading ? <><Loader2 size={14} className="animate-spin" /> Parsing...</> : <><Upload size={14} /> Upload Resume (PDF)</>}
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     </PageTransition>

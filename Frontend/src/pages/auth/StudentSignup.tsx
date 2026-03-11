@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Button, Badge } from '../../components/ui';
 import PageTransition from '../../components/PageTransition';
 import { SKILLS_LIST, TARGET_ROLES } from '../../services/constants';
-import type { ExperienceLevel } from '../../types';
+import { Upload, Loader2, CheckCircle2 } from 'lucide-react';
+import type { ExperienceLevel, ParsedResume } from '../../types';
 
 const YEARS = Array.from({ length: 6 }, (_, i) => 2024 + i);
 
@@ -26,6 +27,34 @@ export default function StudentSignup() {
   const [skills, setSkills] = useState<string[]>([]);
   const [targetRoles, setTargetRoles] = useState<string[]>([]);
   const [experience, setExperience] = useState<ExperienceLevel>('Beginner');
+
+  // Resume upload
+  const resumeRef = useRef<HTMLInputElement>(null);
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeParsed, setResumeParsed] = useState(false);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setResumeUploading(true);
+    try {
+      const form = new FormData();
+      form.append('resume', file);
+      const res = await fetch('/api/resumes', { method: 'POST', body: form });
+      if (!res.ok) throw new Error('Upload failed');
+      const data: ParsedResume = await res.json();
+      // Auto-fill skills from resume
+      const newSkills = new Set(skills);
+      data.skills.forEach(s => {
+        const match = SKILLS_LIST.find(k => k.toLowerCase() === s.toLowerCase());
+        if (match) newSkills.add(match);
+      });
+      setSkills([...newSkills]);
+      setResumeParsed(true);
+    } catch { /* silently fail, user can still pick manually */ } finally {
+      setResumeUploading(false);
+    }
+  };
 
   const toggleItem = (list: string[], item: string, setter: (v: string[]) => void) => {
     setter(list.includes(item) ? list.filter(i => i !== item) : [...list, item]);
@@ -101,6 +130,21 @@ export default function StudentSignup() {
           {step === 2 && (
             <div className="space-y-5">
               <h2 className="text-lg font-semibold mb-4">Skills & Interests</h2>
+
+              {/* Resume upload shortcut */}
+              <div className="p-4 bg-[var(--bg-elevated)] rounded-[var(--radius-md)] border border-[var(--border-subtle)]">
+                <input ref={resumeRef} type="file" accept="application/pdf" className="hidden" onChange={handleResumeUpload} />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Auto-fill from Resume</p>
+                    <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Upload your resume to auto-select matching skills</p>
+                  </div>
+                  <Button variant="secondary" onClick={() => resumeRef.current?.click()} disabled={resumeUploading}>
+                    {resumeUploading ? <><Loader2 size={14} className="animate-spin" /> Parsing...</> : resumeParsed ? <><CheckCircle2 size={14} /> Uploaded</> : <><Upload size={14} /> Upload PDF</>}
+                  </Button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-[13px] font-medium text-[var(--text-secondary)] mb-2">Skills (select all that apply)</label>
                 <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
