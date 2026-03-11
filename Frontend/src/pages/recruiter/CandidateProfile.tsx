@@ -103,6 +103,7 @@ export default function CandidateProfile() {
               <div key={a.skill} className="flex items-center gap-4">
                 <span className="text-sm w-32">{a.skill}</span>
                 <ProgressBar value={a.score} className="flex-1" />
+                <span className="font-(--font-mono) text-sm text-(--text-secondary) w-10 text-right shrink-0">{a.score}%</span>
               </div>
             ))}
           </div>

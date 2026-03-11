@@ -129,7 +129,10 @@ export default function Pipeline() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between mb-2">
-                    {c.score != null && <Badge variant="accent">{c.score} pts</Badge>}
+                    <div className="flex items-center gap-1">
+                      {c.matchPercent != null && <Badge variant="accent">{c.matchPercent}% match</Badge>}
+                      {c.score != null && <Badge variant="neutral">{c.score}% score</Badge>}
+                    </div>
                     <Badge variant={c.status === 'active' ? 'success' : c.status === 'rejected' ? 'danger' : c.status === 'hired' ? 'accent' : 'neutral'}>{c.status}</Badge>
                   </div>
                   <div className="flex gap-1">

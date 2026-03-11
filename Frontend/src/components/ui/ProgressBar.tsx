@@ -22,7 +22,7 @@ export default function ProgressBar({ value, className = '', showLabel = true }:
       </div>
       {showLabel && (
         <span className="font-[var(--font-mono)] text-sm font-medium" style={{ color: getColor(clamped) }}>
-          {clamped}%
+          {Math.round(clamped)}%
         </span>
       )}
     </div>

@@ -126,7 +126,11 @@ export default function RecruiterDashboard() {
                 <span className="text-[var(--text-tertiary)]">Match</span>
                 <Badge variant="accent">{c.matchPercent}%</Badge>
               </div>
-              <ProgressBar value={c.readinessScore} className="mb-3" />
+              <div className="flex items-center gap-2 mb-1">
+                <ProgressBar value={c.readinessScore} className="flex-1" />
+                <span className="font-[var(--font-mono)] text-xs text-[var(--text-tertiary)] shrink-0">{c.readinessScore}%</span>
+              </div>
+              <p className="text-[11px] text-[var(--text-tertiary)] mb-2">Readiness</p>
               <Link to={`/recruiter/candidates/${c.id}`}>
                 <Button variant="secondary" className="w-full text-xs h-8">View Profile</Button>
               </Link>

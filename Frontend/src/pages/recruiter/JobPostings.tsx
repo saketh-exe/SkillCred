@@ -96,6 +96,7 @@ export default function JobPostings() {
               <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Title</th>
               <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Status</th>
               <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Applicants</th>
+              <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Top Match</th>
               <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Created</th>
               <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Actions</th>
             </tr>
@@ -106,6 +107,7 @@ export default function JobPostings() {
                 <td className="px-4 text-sm font-medium">{job.title}</td>
                 <td className="px-4"><Badge variant={statusVariant(job.status)}>{job.status}</Badge></td>
                 <td className="px-4 font-[var(--font-mono)] text-sm">{job.applicantCount}</td>
+                <td className="px-4"><Badge variant="accent">{job.topMatchPercent}%</Badge></td>
                 <td className="px-4 text-sm text-[var(--text-tertiary)]">{new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
                 <td className="px-4">
                   <div className="flex gap-2">

@@ -160,6 +160,7 @@ export interface PipelineCandidate {
   name: string;
   avatarUrl?: string;
   stageId: string;
+  matchPercent?: number;
   score?: number;
   status: 'active' | 'advanced' | 'rejected' | 'hired';
   notes?: string;
@@ -326,16 +327,15 @@ export interface ParsedResume {
 // ─── Credibility Report ─────────────────────────────────────────
 export interface CredibilitySkillAnalysis {
   skill: string;
-  claimedLevel: string;
-  evidenceFound: string;
-  credibilityScore: number;
+  verificationStatus: 'verified' | 'partially_verified' | 'unverified';
+  evidence: string | null;
 }
 
 export interface CredibilityProjectAnalysis {
-  project: string;
-  claimsVerified: string[];
-  discrepancies: string[];
-  credibilityScore: number;
+  name: string;
+  source: 'resume_only' | 'github_only' | 'both';
+  githubRepo: string | null;
+  notes: string | null;
 }
 
 export interface CredibilityReport {

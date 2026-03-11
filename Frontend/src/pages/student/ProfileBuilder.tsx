@@ -30,6 +30,20 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(days / 365)}y ago`;
 }
 
+const LANG_COLORS: Record<string, string> = {
+  TypeScript: '#3178c6', JavaScript: '#f1e05a', Python: '#3572a5', Rust: '#dea584',
+  Go: '#00add8', Java: '#b07219', 'C++': '#f34b7d', C: '#555555', 'C#': '#178600',
+  Ruby: '#701516', PHP: '#4f5d95', Swift: '#f05138', Kotlin: '#a97bff',
+  HTML: '#e34c26', CSS: '#563d7c', SCSS: '#c6538c', Shell: '#89e051',
+  Vue: '#41b883', Svelte: '#ff3e00', Dart: '#00b4ab', R: '#198ce7',
+  Scala: '#c22d40', Haskell: '#5e5086', Elixir: '#6e4a7e',
+  'Jupyter Notebook': '#da5b0b', Dockerfile: '#384d54',
+};
+const LANG_FALLBACK = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6', '#8b5cf6', '#06b6d4', '#84cc16'];
+function langColor(name: string, idx: number) {
+  return LANG_COLORS[name] ?? LANG_FALLBACK[idx % LANG_FALLBACK.length];
+}
+
 const FILE_STATUS_ICONS: Record<string, typeof FilePlus> = {
   added: FilePlus, modified: FileEdit, removed: FileMinus,
   renamed: FileCode, copied: FileCode, changed: FileEdit, unchanged: FileCode,
@@ -96,10 +110,10 @@ function RepoCard({ repo }: { repo: GithubRepoProfile }) {
       {totalBytes > 0 && (
         <div className="mb-3">
           <div className="flex h-2 rounded-full overflow-hidden bg-[var(--bg-elevated)]">
-            {topLangs.map(([lang, bytes]) => <div key={lang} style={{ width: `${(bytes / totalBytes) * 100}%` }} className="h-full first:rounded-l-full last:rounded-r-full" title={`${lang}: ${((bytes / totalBytes) * 100).toFixed(1)}%`} />)}
+            {topLangs.map(([lang, bytes], i) => <div key={lang} style={{ width: `${(bytes / totalBytes) * 100}%`, background: langColor(lang, i) }} className="h-full first:rounded-l-full last:rounded-r-full" title={`${lang}: ${((bytes / totalBytes) * 100).toFixed(1)}%`} />)}
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
-            {topLangs.map(([lang, bytes]) => <span key={lang} className="text-[11px] text-[var(--text-tertiary)]">{lang} <span className="font-[var(--font-mono)]">{((bytes / totalBytes) * 100).toFixed(1)}%</span></span>)}
+            {topLangs.map(([lang, bytes], i) => <span key={lang} className="text-[11px] text-[var(--text-tertiary)] flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block flex-shrink-0" style={{ background: langColor(lang, i) }} />{lang} <span className="font-[var(--font-mono)]">{Math.round((bytes / totalBytes) * 100)}%</span></span>)}
           </div>
         </div>
       )}
@@ -121,6 +135,27 @@ function RepoCard({ repo }: { repo: GithubRepoProfile }) {
 }
 
 /* ─── Credibility Section ────────────────────────────────────── */
+const STATUS_LABEL: Record<string, string> = {
+  verified: 'Verified',
+  partially_verified: 'Partial',
+  unverified: 'Unverified',
+};
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger'> = {
+  verified: 'success',
+  partially_verified: 'warning',
+  unverified: 'danger',
+};
+const SOURCE_LABEL: Record<string, string> = {
+  both: 'Resume + GitHub',
+  github_only: 'GitHub Only',
+  resume_only: 'Resume Only',
+};
+const SOURCE_VARIANT: Record<string, 'success' | 'warning' | 'neutral'> = {
+  both: 'success',
+  github_only: 'warning',
+  resume_only: 'neutral',
+};
+
 function CredibilitySection({ report }: { report: CredibilityReport }) {
   const scoreColor = report.overallScore >= 75 ? 'var(--success)' : report.overallScore >= 50 ? 'var(--warning)' : 'var(--danger)';
   const skills = report.skillsAnalysis ?? [];
@@ -154,9 +189,11 @@ function CredibilitySection({ report }: { report: CredibilityReport }) {
                 <div key={i} className="p-3 bg-[var(--bg-elevated)] rounded-[var(--radius-sm)]">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium">{s.skill}</span>
-                    <Badge variant={s.credibilityScore >= 75 ? 'success' : s.credibilityScore >= 50 ? 'warning' : 'danger'}>{s.credibilityScore}%</Badge>
+                    <Badge variant={STATUS_VARIANT[s.verificationStatus] ?? 'neutral'}>
+                      {STATUS_LABEL[s.verificationStatus] ?? s.verificationStatus}
+                    </Badge>
                   </div>
-                  <p className="text-[12px] text-[var(--text-tertiary)]">{s.evidenceFound}</p>
+                  {s.evidence && <p className="text-[12px] text-[var(--text-tertiary)]">{s.evidence}</p>}
                 </div>
               ))}
             </div>
@@ -171,11 +208,17 @@ function CredibilitySection({ report }: { report: CredibilityReport }) {
               {projects.map((p, i) => (
                 <div key={i} className="p-3 bg-[var(--bg-elevated)] rounded-[var(--radius-sm)]">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">{p.project}</span>
-                    <Badge variant={p.credibilityScore >= 75 ? 'success' : p.credibilityScore >= 50 ? 'warning' : 'danger'}>{p.credibilityScore}%</Badge>
+                    <span className="text-sm font-medium">{p.name}</span>
+                    <Badge variant={SOURCE_VARIANT[p.source] ?? 'neutral'}>
+                      {SOURCE_LABEL[p.source] ?? p.source}
+                    </Badge>
                   </div>
-                  {(p.claimsVerified ?? []).length > 0 && <p className="text-[12px] text-[var(--success)]">✓ {p.claimsVerified.join(', ')}</p>}
-                  {(p.discrepancies ?? []).length > 0 && <p className="text-[12px] text-[var(--danger)]">✗ {p.discrepancies.join(', ')}</p>}
+                  {p.githubRepo && (
+                    <p className="text-[12px] text-[var(--accent)] flex items-center gap-1 mb-1">
+                      <Github size={11} />{p.githubRepo}
+                    </p>
+                  )}
+                  {p.notes && <p className="text-[12px] text-[var(--text-tertiary)]">{p.notes}</p>}
                 </div>
               ))}
             </div>
@@ -583,10 +626,36 @@ export default function ProfileBuilder() {
                       <span className="text-[13px] font-medium text-[var(--text-primary)]">{lang.name}</span>
                       <div className="flex items-center gap-3 text-[12px] text-[var(--text-tertiary)]">
                         <span>{lang.repoCount} repo{lang.repoCount > 1 ? 's' : ''}</span>
-                        <span className="font-[var(--font-mono)]">{lang.percentage}%</span>
+                        {/* Hover card explaining the % */}
+                        <div className="relative group cursor-help">
+                          <span className="font-[var(--font-mono)] underline decoration-dotted decoration-[var(--text-tertiary)]">
+                            {Math.round(lang.percentage)}%
+                          </span>
+                          <div className="absolute right-0 bottom-full mb-2 w-[230px] bg-[var(--bg-overlay)] border border-[var(--border-subtle)] rounded-[var(--radius-md)] p-3 shadow-xl z-50 hidden group-hover:block text-left pointer-events-none">
+                            <p className="text-[12px] font-bold text-[var(--text-primary)] mb-2.5">{lang.name} · {Math.round(lang.percentage)}% of total code</p>
+                            <div className="space-y-1.5 text-[11px]">
+                              <div className="flex justify-between">
+                                <span className="text-[var(--text-secondary)]">{lang.name} bytes</span>
+                                <span className="font-[var(--font-mono)] text-[var(--text-primary)]">{formatBytes(lang.bytes)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-[var(--text-secondary)]">Total code</span>
+                                <span className="font-[var(--font-mono)] text-[var(--text-primary)]">{formatBytes(githubAnalysis.summary.totalCodeBytes)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-[var(--text-secondary)]">Repos using it</span>
+                                <span className="font-[var(--font-mono)] text-[var(--text-primary)]">{lang.repoCount}</span>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-[var(--text-tertiary)] mt-2 pt-2 border-t border-[var(--border-subtle)] font-[var(--font-mono)]">
+                              {formatBytes(lang.bytes)} / {formatBytes(githubAnalysis.summary.totalCodeBytes)} × 100
+                            </p>
+                            <div className="absolute right-3 top-full border-4 border-transparent border-t-[var(--bg-overlay)]" />
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <ProgressBar value={(lang.bytes / maxLangBytes) * 100} />
+                    <ProgressBar value={(lang.bytes / maxLangBytes) * 100} showLabel={false} />
                   </div>
                 ))}
               </div>

@@ -89,7 +89,6 @@ function StatCounter({ value, suffix, label, sub, color }: { value: number; suff
 export default function Landing() {
   const nav = useNavigate();
   const [mouse, setMouse] = useState({ x: -500, y: -500 });
-  const [hoveredSide, setHoveredSide] = useState<'student' | 'recruiter' | null>(null);
   const [featRef, featInView] = useInView(0.1);
 
   const handleMouse = useCallback((e: React.MouseEvent) => {
@@ -115,11 +114,7 @@ export default function Landing() {
               Skill<span className="text-[var(--accent)]">Cred</span>
             </span>
           </div>
-          <nav className="hidden md:flex gap-8 text-[14px] text-[var(--text-secondary)]">
-            {['Platform', 'For Students', 'For Recruiters', 'Pricing'].map(l => (
-              <span key={l} className="hover:text-[var(--text-primary)] cursor-pointer transition-colors duration-150">{l}</span>
-            ))}
-          </nav>
+
           <div className="flex items-center gap-2 flex-1 justify-end">
             <ToggleTheme />
             <Button variant="ghost" onClick={() => nav('/auth/login')}>Sign In</Button>
@@ -280,13 +275,8 @@ export default function Landing() {
           ].map((side, idx) => (
             <div
               key={side.id}
-              onMouseEnter={() => setHoveredSide(side.id)}
-              onMouseLeave={() => setHoveredSide(null)}
-              className="relative flex-1 flex flex-col justify-center px-12 py-16 cursor-pointer overflow-hidden transition-all duration-500"
-              style={{
-                flex: hoveredSide === side.id ? 1.18 : hoveredSide !== null ? 0.82 : 1,
-                borderRight: idx === 0 ? '1px solid var(--border-subtle)' : 'none',
-              }}
+  className="relative flex-1 flex flex-col justify-center px-12 py-16 cursor-pointer overflow-hidden"
+              style={{ borderRight: idx === 0 ? '1px solid var(--border-subtle)' : 'none' }}
               onClick={() => nav(side.path)}
             >
               {/* Dot grid */}

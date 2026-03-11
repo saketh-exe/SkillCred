@@ -115,7 +115,11 @@ export default function CandidateDiscovery() {
                   {c.verifiedSkills.slice(0, 4).map(s => <Badge key={s} variant="success">{s}</Badge>)}
                   {c.verifiedSkills.length > 4 && <Badge variant="neutral">+{c.verifiedSkills.length - 4}</Badge>}
                 </div>
-                <ProgressBar value={c.readinessScore} className="mb-3" />
+                <div className="flex items-center gap-2 mb-1">
+                  <ProgressBar value={c.readinessScore} className="flex-1" />
+                  <span className="font-(--font-mono) text-xs text-(--text-tertiary) shrink-0">{c.readinessScore}%</span>
+                </div>
+                <p className="text-[11px] text-(--text-tertiary) mb-2">Readiness</p>
                 <div className="flex gap-2">
                   <Button variant="secondary" className="flex-1 text-xs h-8" onClick={e => { e.stopPropagation(); nav(`/recruiter/candidates/${c.id}`); }}>View Profile</Button>
                   <Button className="flex-1 text-xs h-8" onClick={e => { e.stopPropagation(); addToast(`${c.name} added to pipeline`, 'success'); }}>Add to Pipeline</Button>

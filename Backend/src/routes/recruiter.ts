@@ -140,6 +140,14 @@ router.get("/candidates", async (req: AuthRequest, res) => {
       const matched = required.filter(s => allSkills.includes(s)).length;
       const matchPercent = required.length > 0 ? Math.round((matched / required.length) * 100) : 0;
 
+      const gh = student["githubAnalysis"] as { profile?: { publicRepos?: number }; languages?: Array<{ name: string }>; repositories?: Array<{ recentCommits?: unknown[] }> } | null;
+      const hasGitHub = !!gh;
+      const githubStats = gh ? {
+        repos: gh.profile?.publicRepos ?? 0,
+        languages: (gh.languages ?? []).map((l) => l.name),
+        contributions: (gh.repositories ?? []).reduce((sum, r) => sum + (r.recentCommits?.length ?? 0), 0),
+      } : undefined;
+
       candidates.push({
         id: String(student._id),
         name: student.name,
@@ -154,7 +162,8 @@ router.get("/candidates", async (req: AuthRequest, res) => {
         matchPercent,
         readinessScore: Math.max(0, matchPercent - 10),
         hasProjects: false,
-        hasGitHub: false,
+        hasGitHub,
+        githubStats,
         resumeUrl: (student as Record<string, unknown>)["resumeUrl"] ?? null,
         assessmentScores: skills
           .filter((s: { score?: number }) => s.score != null)
@@ -181,7 +190,30 @@ router.get("/candidates/:id", async (req: AuthRequest, res) => {
       .map((s: { name: string }) => s.name);
     const allSkills = skills.map((s: { name: string }) => s.name);
 
+    // Compute matchPercent from the most recent application to this recruiter's jobs
+    const myJobs = await JobPosting.find({ recruiterId: req.userId }).select("_id requiredSkills");
+    const app = await Application.findOne({ studentId: student._id, jobId: { $in: myJobs.map((j: { _id: unknown }) => j._id) } })
+      .sort({ createdAt: -1 })
+      .populate("jobId", "requiredSkills");
+
+    let matchPercent = 0;
+    if (app?.jobId) {
+      const jobDoc = app.jobId as { requiredSkills?: Array<{ name: string }> };
+      const required = (jobDoc.requiredSkills ?? []).map((s) => s.name);
+      const matched = required.filter((s) => allSkills.includes(s)).length;
+      matchPercent = required.length > 0 ? Math.round((matched / required.length) * 100) : 0;
+    }
+    const readinessScore = Math.max(0, matchPercent - 10);
+
     const s = student as unknown as Record<string, unknown>;
+    const gh = s["githubAnalysis"] as { profile?: { publicRepos?: number }; languages?: Array<{ name: string }>; repositories?: Array<{ recentCommits?: unknown[] }> } | null;
+    const hasGitHub = !!gh;
+    const githubStats = gh ? {
+      repos: gh.profile?.publicRepos ?? 0,
+      languages: (gh.languages ?? []).map((l) => l.name),
+      contributions: (gh.repositories ?? []).reduce((sum, r) => sum + (r.recentCommits?.length ?? 0), 0),
+    } : undefined;
+
     res.json({
       id: String(student._id),
       name: s["name"],
@@ -194,9 +226,10 @@ router.get("/candidates/:id", async (req: AuthRequest, res) => {
       targetRoles: s["targetRoles"],
       experienceLevel: s["experienceLevel"],
       hasProjects: false,
-      hasGitHub: false,
-      matchPercent: 0,
-      readinessScore: 0,
+      hasGitHub,
+      githubStats,
+      matchPercent,
+      readinessScore,
       resumeUrl: s["resumeUrl"] ?? null,
       assessmentScores: skills
         .filter((s: { score?: number }) => s.score != null)
@@ -217,23 +250,36 @@ router.get("/pipeline/:jobId", async (req: AuthRequest, res) => {
     const apps = await Application.find({ jobId: job._id })
       .populate("studentId", "name avatarUrl");
 
-    const candidates = apps.map((a: {
+    const required: string[] = (job.requiredSkills as Array<{ name: string }> ?? []).map((s) => s.name);
+
+    const candidatesPromises = apps.map(async (a: {
       studentId: { _id: unknown; name: string; avatarUrl?: string } | unknown;
       status: string; pipelineStage: number; stages: Array<{ score?: number }>;
     }) => {
       const student = a.studentId as { _id: unknown; name: string; avatarUrl?: string };
       const currentStage = (job.pipeline as Array<{ _id: unknown }>)[a.pipelineStage];
+
+      let matchPercent: number | undefined;
+      if (required.length > 0 && student?._id) {
+        const skills = await SkillVerification.find({ studentId: student._id }).select("name");
+        const allSkills = skills.map((s: { name: string }) => s.name);
+        const matched = required.filter((s) => allSkills.includes(s)).length;
+        matchPercent = Math.round((matched / required.length) * 100);
+      }
+
       const mapped = {
         id: String(student?._id ?? ""),
         name: student?.name ?? "Unknown",
         avatarUrl: student?.avatarUrl,
         stageId: String(currentStage?._id ?? ""),
+        matchPercent,
         score: a.stages?.[a.pipelineStage - 1]?.score,
         status: a.status === "Rejected" ? "rejected" : a.status === "Hired" ? "hired" : "active",
       };
       console.log(`[getPipeline] candidate studentId=${mapped.id} pipelineStage=${a.pipelineStage} -> stageId=${mapped.stageId}`);
       return mapped;
     });
+    const candidates = await Promise.all(candidatesPromises);
 
     res.json({
       stages: (job.pipeline as Array<{ _id: unknown; name: string; type: string; description: string; maxAdvancing: number }>).map(s => ({
