@@ -2,6 +2,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import type { Api } from '../hooks/useApi'
 import { useQuiz } from '../context/QuizContext'
+import { useProctoringMonitor } from '../hooks/useProctoringMonitor'
+import type { ProctoringViolation } from '../hooks/useProctoringMonitor'
+import { ProctoringOverlay } from '../components/ProctoringOverlay'
 
 interface Question {
   id: string
@@ -67,8 +70,23 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
   const [showFullscreenOverlay, setShowFullscreenOverlay] = useState(false)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [terminated, setTerminated] = useState(false)
+  const [proctoringEnabled, setProctoringEnabled] = useState(false)
 
   const { setQuizActive } = useQuiz()
+
+  const {
+    videoRef: proctoringVideoRef,
+    streamRef: proctoringStreamRef,
+    attachStream: proctoringAttachStream,
+    status: proctoringStatus,
+    violations: proctoringViolations,
+    activeWarning: proctoringWarning,
+    violationCount: proctoringViolationCount,
+    resetViolations: resetProctoringViolations,
+  } = useProctoringMonitor({
+    enabled: proctoringEnabled,
+    quizActive: quizStarted && !showResults && !terminated,
+  })
 
   const assessmentDataRef = useRef<SkillAssessmentData | null>(null)
   const answersRef = useRef<Record<string, string>>({})
@@ -277,6 +295,11 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
   }, [])
 
+  // Stop camera when quiz ends (normal completion, termination, or reset)
+  useEffect(() => {
+    if (showResults || terminated) setProctoringEnabled(false)
+  }, [showResults, terminated])
+
   // Exit fullscreen when quiz ends
   useEffect(() => {
     if ((!assessmentData || !quizStarted || showResults) && document.fullscreenElement) {
@@ -417,6 +440,8 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
     setAutoSubmitMessage(null)
     setTerminated(false)
     terminatedRef.current = false
+    resetProctoringViolations()
+    setProctoringEnabled(false)
     setShowTabWarning(false)
     setQuizStarted(false)
     quizStartedRef.current = false
@@ -468,6 +493,8 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
                         local,
                         assessmentData?.candidateName,
                         true,
+                        proctoringEnabled,
+                        proctoringViolations,
                       ),
                       assessmentData?.candidateName,
                     )
@@ -508,6 +535,16 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
         </div>
       )}
 
+      <ProctoringOverlay
+        videoRef={proctoringVideoRef}
+        streamRef={proctoringStreamRef}
+        attachStream={proctoringAttachStream}
+        status={proctoringStatus}
+        violations={proctoringViolations}
+        activeWarning={proctoringWarning}
+        enabled={proctoringEnabled}
+      />
+
       <div className="max-w-4xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6 text-center text-gray-800 dark:text-white">
           Skill Verification Assessment
@@ -531,7 +568,7 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
               {verificationResult ? (
                 <button
                   onClick={() => downloadJSON(
-                    buildReport(assessmentData, verificationResult, assessmentData?.candidateName, true),
+                    buildReport(assessmentData, verificationResult, assessmentData?.candidateName, true, proctoringEnabled, proctoringViolations),
                     assessmentData?.candidateName,
                   )}
                   className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition"
@@ -603,11 +640,37 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
             </div>
             <div className="bg-yellow-50 dark:bg-yellow-900/40 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 text-left text-sm space-y-1.5 text-yellow-900 dark:text-yellow-200">
               <p className="font-semibold mb-2">Assessment Rules</p>
-              <p>🖥️ The assessment will run in <strong>full screen</strong>. Exiting fullscreen will force you back in.</p>
-              <p>🔒 Switching tabs or apps is detected. <strong>3 violations = auto-terminate.</strong></p>
-              <p>⏱️ Each section has a <strong>{SECTION_TIME_SECONDS}-second timer</strong>. Unanswered questions are skipped when time runs out.</p>
-              <p>🚫 Right-click, copy, paste, and back/forward navigation are <strong>disabled</strong>.</p>
+              <p>The assessment will run in <strong>full screen</strong>. Exiting fullscreen will force you back in.</p>
+              <p>Switching tabs or apps is detected. <strong>3 violations = auto-terminate.</strong></p>
+              <p>Each section has a <strong>{SECTION_TIME_SECONDS}-second timer</strong>. Unanswered questions are skipped when time runs out.</p>
+              <p>Right-click, copy, paste, and back/forward navigation are <strong>disabled</strong>.</p>
             </div>
+
+            {/* Camera monitoring toggle */}
+            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-left">
+              <div>
+                <p className="font-semibold text-sm text-gray-800 dark:text-white">📷 Camera Monitoring <span className="text-xs font-normal text-gray-400 ml-1">(Optional)</span></p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Webcam AI monitors for multiple people, gaze direction &amp; phone use</p>
+              </div>
+              <button
+                onClick={() => setProctoringEnabled(v => !v)}
+                className={[
+                  'ml-4 px-4 py-2 rounded-lg text-sm font-semibold transition shrink-0',
+                  proctoringEnabled
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200',
+                ].join(' ')}
+              >
+                {proctoringEnabled ? '✓ Enabled' : 'Enable'}
+              </button>
+            </div>
+            {proctoringEnabled && !proctoringStatus.isReady && !proctoringStatus.error && (
+              <p className="text-xs text-center text-blue-500">Loading camera &amp; AI models…</p>
+            )}
+            {proctoringEnabled && proctoringStatus.error && (
+              <p className="text-xs text-center text-red-500">⚠ {proctoringStatus.error}</p>
+            )}
+
             <button
               onClick={handleStartQuiz}
               className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold rounded-xl transition shadow-lg"
@@ -857,7 +920,7 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
               </button>
               <button
                 onClick={() => downloadJSON(
-                  buildReport(assessmentData, verificationResult, assessmentData?.candidateName, false),
+                  buildReport(assessmentData, verificationResult, assessmentData?.candidateName, false, proctoringEnabled, proctoringViolations),
                   assessmentData?.candidateName,
                 )}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition"
@@ -904,6 +967,8 @@ function buildReport(
   v: VerificationResult | null,
   name: string | undefined,
   terminated: boolean,
+  proctoringEnabled = false,
+  proctoringViolations: ProctoringViolation[] = [],
 ) {
   if (!a || !v) return {}
 
@@ -949,6 +1014,16 @@ function buildReport(
       correct: v.correctAnswers,
       wrong: v.wrongAnswers,
       total: v.totalQuestions,
+    },
+    proctoring: {
+      enabled: proctoringEnabled,
+      totalViolations: proctoringViolations.length,
+      events: proctoringViolations.map(pv => ({
+        type: pv.type,
+        message: pv.message,
+        time: new Date(pv.timestamp).toISOString(),
+        ...(pv.gazeDirection ? { gazeDirection: pv.gazeDirection } : {}),
+      })),
     },
     skills: skillBreakdowns,
   }
