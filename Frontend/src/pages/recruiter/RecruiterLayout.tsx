@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../../components/ui';
 import { LayoutDashboard, Briefcase, Users, GitBranch, Scale, MessageSquare, Building2 } from 'lucide-react';
+import DashboardNav from '../../components/DashboardNav';
 
 const navItems = [
   { label: 'Dashboard', to: '/recruiter/dashboard', icon: <LayoutDashboard size={18} /> },
@@ -14,13 +15,16 @@ const navItems = [
 
 export default function RecruiterLayout() {
   return (
-    <div className="flex min-h-[calc(100vh-56px)]">
-      <Sidebar items={navItems} />
-      <main className="flex-1 p-8 overflow-y-auto">
-        <div className="max-w-[1060px]">
-          <Outlet />
-        </div>
-      </main>
+    <div className="flex flex-col min-h-screen">
+      <DashboardNav />
+      <div className="flex flex-1">
+        <Sidebar items={navItems} />
+        <main className="flex-1 p-8 overflow-y-auto">
+          <div className="max-w-[1060px]">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

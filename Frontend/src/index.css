@@ -64,6 +64,30 @@
   --danger-subtle: #FEF2F2;
 }
 
+:root.dark {
+  --bg-base: #0F0F11;
+  --bg-surface: #1A1A1E;
+  --bg-elevated: #232328;
+  --bg-overlay: #000000;
+  --border-subtle: #2A2A30;
+  --border-default: #3A3A42;
+  --border-strong: #55555F;
+  --text-primary: #EDEDEF;
+  --text-secondary: #A0A0A8;
+  --text-tertiary: #6B6B75;
+  --text-inverse: #18181A;
+  --accent: #5B8AF0;
+  --accent-hover: #7BA3F7;
+  --accent-subtle: #1A2744;
+  --accent-text: #8BB4FF;
+  --success: #34D67A;
+  --success-subtle: #0F261A;
+  --warning: #F0A030;
+  --warning-subtle: #28200F;
+  --danger: #F06060;
+  --danger-subtle: #2A1010;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -75,6 +99,19 @@ body {
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Lightwind — smooth theme transition */
+.lightwind,
+.lightwind *,
+.lightwind *::before,
+.lightwind *::after {
+  transition: background-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              fill 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 h1, h2, h3, h4, h5, h6 {

@@ -102,7 +102,7 @@ export default function StudentDashboard() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-[15px] font-semibold">Skill Badges</h2>
-            <Link to="/student/skills" className="text-[13px] text-[var(--accent)] font-medium hover:underline">Manage</Link>
+            <Link to="/student/profile" className="text-[13px] text-[var(--accent)] font-medium hover:underline">Manage</Link>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {skills.slice(0, 9).map(s => (
@@ -144,7 +144,7 @@ export default function StudentDashboard() {
               ))}
             </div>
           </div>
-          <Link to="/student/gaps" className="mt-4 inline-flex items-center gap-1 text-[13px] text-[var(--accent)] font-medium hover:underline">
+          <Link to="/student/gap-analysis" className="mt-4 inline-flex items-center gap-1 text-[13px] text-[var(--accent)] font-medium hover:underline">
             View Full Analysis <ArrowRight size={14} />
           </Link>
         </Card>

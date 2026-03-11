@@ -88,8 +88,8 @@ export default function SkillGapAnalysis() {
                     <p className="text-[13px] text-[var(--text-secondary)] mt-1">{m.reason}</p>
                     <Badge className="mt-2">{m.proficiencyNeeded} proficiency needed</Badge>
                   </div>
-                  <Link to="/student/skills">
-                    <Button variant="secondary" className="text-xs h-8">Start Verification</Button>
+                  <Link to="/student/gap-analysis">
+                    <Button variant="secondary" className="text-xs h-8">Learn More</Button>
                   </Link>
                 </div>
               </Card>

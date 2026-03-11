@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Card, Badge, Avatar, Button } from '../../components/ui';
+import { ToggleTheme } from '@/components/ui/toggle-theme';
 import PageTransition from '../../components/PageTransition';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
@@ -105,6 +106,18 @@ export default function StudentProfile() {
             >
               <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${visible ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
             </button>
+          </div>
+        </Card>
+
+        {/* Appearance */}
+        <Card className="p-6">
+          <h2 className="text-[15px] font-semibold mb-4">Appearance</h2>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-[var(--text-secondary)]">UI Mode</p>
+              <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">Switch between light and dark theme</p>
+            </div>
+            <ToggleTheme />
           </div>
         </Card>
       </div>

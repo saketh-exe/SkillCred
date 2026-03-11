@@ -18,7 +18,7 @@ export default function Sidebar({ items, header }: Props) {
 
   return (
     <aside
-      className={`sticky top-14 h-[calc(100vh-56px)] bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] flex flex-col transition-all duration-200 ${
+      className={`sticky top-14 h-[calc(100vh-56px)] bg-[var(--bg-surface)] border-r border-[var(--border-subtle)] flex flex-col flex-shrink-0 transition-all duration-200 ${
         collapsed ? 'w-16' : 'w-[220px]'
       }`}
     >
