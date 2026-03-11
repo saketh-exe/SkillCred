@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   optimizeDeps: {
     // MediaPipe loads its own WASM — pre-bundling breaks WASM path resolution
-    exclude: ['@mediapipe/tasks-vision'],
+    // face-api.js has complex conditional imports that confuse the pre-bundler
+    exclude: ['@mediapipe/tasks-vision', '@vladmandic/face-api'],
   },
   server: {
     sourcemapIgnoreList: (sourcePath) => sourcePath.includes('node_modules'),

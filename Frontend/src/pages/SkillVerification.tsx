@@ -5,6 +5,8 @@ import { useQuiz } from '../context/QuizContext'
 import { useProctoringMonitor } from '../hooks/useProctoringMonitor'
 import type { ProctoringViolation } from '../hooks/useProctoringMonitor'
 import { ProctoringOverlay } from '../components/ProctoringOverlay'
+import { useFaceVerification, euclideanDistance, IDENTITY_MISMATCH_THRESHOLD } from '../hooks/useFaceVerification'
+import { IdentityCapture } from '../components/IdentityCapture'
 
 interface Question {
   id: string
@@ -72,7 +74,18 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
   const [terminated, setTerminated] = useState(false)
   const [proctoringEnabled, setProctoringEnabled] = useState(false)
 
+  // Identity verification state
+  const [showIdentityCapture, setShowIdentityCapture] = useState(false)
+  const [selfieDescriptor, setSelfieDescriptor] = useState<Float32Array | null>(null)
+  const [selfieDataUrl, setSelfieDataUrl] = useState<string | null>(null)
+  const [idCardDataUrl, setIdCardDataUrl] = useState<string | null>(null)
+  const [identityViolations, setIdentityViolations] = useState<
+    { id: string; timestamp: number; distance: number; message: string }[]
+  >([])
+
   const { setQuizActive } = useQuiz()
+
+  const faceVerification = useFaceVerification()
 
   const {
     videoRef: proctoringVideoRef,
@@ -178,6 +191,9 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
     setTabLeaveCount(0)
     tabLeaveCountRef.current = 0
     showResultsRef.current = false
+    // Camera monitoring and identity capture are mandatory
+    setProctoringEnabled(true)
+    setShowIdentityCapture(true)
   }, [assessmentData])
 
   // Per-section countdown timer
@@ -299,6 +315,46 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
   useEffect(() => {
     if (showResults || terminated) setProctoringEnabled(false)
   }, [showResults, terminated])
+
+  // Periodic identity check every 90 s during the quiz
+  const IDENTITY_CHECK_INTERVAL_MS = 90_000
+  useEffect(() => {
+    if (
+      !quizStarted ||
+      showResults ||
+      terminated ||
+      !proctoringEnabled ||
+      !selfieDescriptor ||
+      !faceVerification.isReady
+    ) return
+    const interval = setInterval(async () => {
+      const video = proctoringVideoRef.current
+      if (!video || video.readyState < 2 || video.videoWidth === 0) return
+      const descriptor = await faceVerification.extractDescriptor(video)
+      if (!descriptor) return // face absence is already handled by MediaPipe
+      const distance = euclideanDistance(selfieDescriptor, descriptor)
+      if (distance > IDENTITY_MISMATCH_THRESHOLD) {
+        setIdentityViolations((prev) => [
+          ...prev,
+          {
+            id: `identity-${Date.now()}`,
+            timestamp: Date.now(),
+            distance,
+            message: `Face does not match reference photo (distance: ${distance.toFixed(3)})`,
+          },
+        ])
+      }
+    }, IDENTITY_CHECK_INTERVAL_MS)
+    return () => clearInterval(interval)
+  }, [
+    quizStarted,
+    showResults,
+    terminated,
+    proctoringEnabled,
+    selfieDescriptor,
+    faceVerification.isReady,
+    faceVerification.extractDescriptor,
+  ])
 
   // Exit fullscreen when quiz ends
   useEffect(() => {
@@ -442,6 +498,11 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
     terminatedRef.current = false
     resetProctoringViolations()
     setProctoringEnabled(false)
+    setSelfieDescriptor(null)
+    setSelfieDataUrl(null)
+    setIdCardDataUrl(null)
+    setIdentityViolations([])
+    setShowIdentityCapture(false)
     setShowTabWarning(false)
     setQuizStarted(false)
     quizStartedRef.current = false
@@ -495,6 +556,8 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
                         true,
                         proctoringEnabled,
                         proctoringViolations,
+                        identityViolations,
+                        idCardDataUrl,
                       ),
                       assessmentData?.candidateName,
                     )
@@ -543,6 +606,24 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
         violations={proctoringViolations}
         activeWarning={proctoringWarning}
         enabled={proctoringEnabled}
+        hasReferenceIdentity={!!selfieDescriptor}
+        onVerifyIdentity={selfieDescriptor ? async () => {
+          const video = proctoringVideoRef.current
+          if (!video || video.readyState < 2) return 'no_face'
+          const descriptor = await faceVerification.extractDescriptor(video)
+          if (!descriptor) return 'no_face'
+          const dist = euclideanDistance(selfieDescriptor, descriptor)
+          const result = dist <= IDENTITY_MISMATCH_THRESHOLD ? 'match' : 'mismatch'
+          if (result === 'mismatch') {
+            setIdentityViolations(prev => [...prev, {
+              id: `identity-manual-${Date.now()}`,
+              timestamp: Date.now(),
+              distance: dist,
+              message: `Manual check: face mismatch (distance: ${dist.toFixed(3)})`,
+            }])
+          }
+          return result
+        } : undefined}
       />
 
       <div className="max-w-4xl mx-auto p-6">
@@ -568,7 +649,7 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
               {verificationResult ? (
                 <button
                   onClick={() => downloadJSON(
-                    buildReport(assessmentData, verificationResult, assessmentData?.candidateName, true, proctoringEnabled, proctoringViolations),
+                    buildReport(assessmentData, verificationResult, assessmentData?.candidateName, true, proctoringEnabled, proctoringViolations, identityViolations, idCardDataUrl),
                     assessmentData?.candidateName,
                   )}
                   className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition"
@@ -582,6 +663,20 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
               )}
             </div>
           </div>
+        ) : showIdentityCapture ? (
+          /* ── IDENTITY CAPTURE SCREEN ── */
+          <IdentityCapture
+            streamRef={proctoringStreamRef}
+            faceApiReady={faceVerification.isReady}
+            faceApiLoadError={faceVerification.loadError}
+            extractDescriptor={faceVerification.extractDescriptor}
+            onComplete={({ descriptor, selfieDataUrl: sdu, idCardDataUrl: idu }) => {
+              setSelfieDescriptor(descriptor)
+              setSelfieDataUrl(sdu)
+              setIdCardDataUrl(idu)
+              setShowIdentityCapture(false)
+            }}
+          />
         ) : !assessmentData ? (
           /* ── SETUP SCREEN ── */
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 space-y-6">
@@ -615,14 +710,6 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
                 <p className="text-sm">{error}</p>
               </div>
             )}
-
-            <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 p-4 rounded-lg text-sm">
-              <p className="font-semibold mb-1">API Key Setup</p>
-              <p>Add your Gemini API key to <code>Backend/.env</code>:</p>
-              <pre className="mt-2 bg-gray-100 dark:bg-gray-800 p-2 rounded text-xs">
-                GEMINI_API_KEY=your_key_here
-              </pre>
-            </div>
           </div>
         ) : !quizStarted ? (
           /* ── READY TO BEGIN SCREEN ── */
@@ -644,38 +731,37 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
               <p>Switching tabs or apps is detected. <strong>3 violations = auto-terminate.</strong></p>
               <p>Each section has a <strong>{SECTION_TIME_SECONDS}-second timer</strong>. Unanswered questions are skipped when time runs out.</p>
               <p>Right-click, copy, paste, and back/forward navigation are <strong>disabled</strong>.</p>
+              <p>Camera monitoring and identity verification are <strong>required throughout</strong>.</p>
             </div>
 
-            {/* Camera monitoring toggle */}
-            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-left">
-              <div>
-                <p className="font-semibold text-sm text-gray-800 dark:text-white">📷 Camera Monitoring <span className="text-xs font-normal text-gray-400 ml-1">(Optional)</span></p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Webcam AI monitors for multiple people, gaze direction &amp; phone use</p>
-              </div>
-              <button
-                onClick={() => setProctoringEnabled(v => !v)}
-                className={[
-                  'ml-4 px-4 py-2 rounded-lg text-sm font-semibold transition shrink-0',
-                  proctoringEnabled
-                    ? 'bg-green-600 hover:bg-green-700 text-white'
-                    : 'bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200',
-                ].join(' ')}
-              >
-                {proctoringEnabled ? '✓ Enabled' : 'Enable'}
-              </button>
-            </div>
-            {proctoringEnabled && !proctoringStatus.isReady && !proctoringStatus.error && (
+            {/* Proctoring status */}
+            {!proctoringStatus.isReady && !proctoringStatus.error && (
               <p className="text-xs text-center text-blue-500">Loading camera &amp; AI models…</p>
             )}
-            {proctoringEnabled && proctoringStatus.error && (
+            {proctoringStatus.error && (
               <p className="text-xs text-center text-red-500">⚠ {proctoringStatus.error}</p>
             )}
 
+            {/* Identity capture badge */}
+            <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-left">
+              <div>
+                <p className="font-semibold text-sm text-gray-800 dark:text-white">🧑‍💻 Identity Capture</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Selfie + ID card for periodic face-match verification</p>
+              </div>
+              {selfieDescriptor ? (
+                <span className="ml-4 shrink-0 text-green-500 font-semibold text-sm">✓ Captured</span>
+              ) : (
+                <span className="ml-4 shrink-0 text-yellow-500 font-semibold text-sm">⚠ Required</span>
+              )}
+            </div>
+
             <button
               onClick={handleStartQuiz}
-              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold rounded-xl transition shadow-lg"
+              disabled={!selfieDescriptor}
+              title={!selfieDescriptor ? 'Complete identity capture first' : undefined}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-lg font-bold rounded-xl transition shadow-lg"
             >
-              Enter Fullscreen &amp; Start Assessment
+              {selfieDescriptor ? 'Enter Fullscreen & Start Assessment' : 'Complete Identity Capture to Continue'}
             </button>
           </div>
         ) : !showResults ? (
@@ -920,9 +1006,9 @@ export default function SkillVerificationPage({ api }: { api: Api }) {
               </button>
               <button
                 onClick={() => downloadJSON(
-                  buildReport(assessmentData, verificationResult, assessmentData?.candidateName, false, proctoringEnabled, proctoringViolations),
-                  assessmentData?.candidateName,
-                )}
+                    buildReport(assessmentData, verificationResult, assessmentData?.candidateName, false, proctoringEnabled, proctoringViolations, identityViolations, idCardDataUrl),
+                    assessmentData?.candidateName,
+                  )}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition"
               >
                 Download Report
@@ -969,6 +1055,8 @@ function buildReport(
   terminated: boolean,
   proctoringEnabled = false,
   proctoringViolations: ProctoringViolation[] = [],
+  identityViolations: { id: string; timestamp: number; distance: number; message: string }[] = [],
+  idCardDataUrl: string | null = null,
 ) {
   if (!a || !v) return {}
 
@@ -1023,6 +1111,18 @@ function buildReport(
         message: pv.message,
         time: new Date(pv.timestamp).toISOString(),
         ...(pv.gazeDirection ? { gazeDirection: pv.gazeDirection } : {}),
+      })),
+    },
+    identity: {
+      captureEnabled: !!idCardDataUrl,
+      idCardImage: idCardDataUrl ?? null,
+      periodicChecksRun: identityViolations.length > 0
+        ? identityViolations.length + ' mismatches detected'
+        : 'no mismatches',
+      mismatches: identityViolations.map((iv) => ({
+        time: new Date(iv.timestamp).toISOString(),
+        distance: iv.distance,
+        message: iv.message,
       })),
     },
     skills: skillBreakdowns,

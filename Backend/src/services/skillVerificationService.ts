@@ -60,12 +60,20 @@ export class SkillVerificationService {
     }));
 
     const answerKey: { questionId: string; skill: string; correctAnswer: string; explanation: string }[] = [];
+    const letterToIndex: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
     questions.forEach(q => {
+      const raw: string = (q as any).correctAnswer ?? '';
+      // Gemini returns a letter ("A"/"B"/"C"/"D") — resolve it to the full
+      // option text from the ORIGINAL (pre-shuffle) options array so the
+      // stored answer matches exactly what the user selects.
+      const idx = letterToIndex[raw.trim().toUpperCase()];
+      const correctAnswerText =
+        idx !== undefined ? q.options[idx] : (raw || q.options[0]);
       answerKey.push({
         questionId: q.id,
         skill: q.skill,
-        correctAnswer: (q as any).correctAnswer || q.options[0],
-        explanation: (q as any).explanation || "Answer validation complete.",
+        correctAnswer: correctAnswerText,
+        explanation: (q as any).explanation || 'Answer validation complete.',
       });
     });
 
