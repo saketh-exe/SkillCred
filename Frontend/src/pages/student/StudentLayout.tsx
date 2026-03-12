@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../../components/ui';
 import { LayoutDashboard, BarChart3, Briefcase, FileText, MessageSquare, User, UserPlus } from 'lucide-react';
@@ -13,15 +14,19 @@ const navItems = [
   { label: 'Profile', to: '/student/profile', icon: <User size={18} /> },
 ];
 
+export type StudentLayoutContext = { setHideChrome: (hide: boolean) => void };
+
 export default function StudentLayout() {
+  const [hideChrome, setHideChrome] = useState(false);
+
   return (
     <div className="flex flex-col min-h-screen">
-      <DashboardNav />
+      {!hideChrome && <DashboardNav />}
       <div className="flex flex-1">
-        <Sidebar items={navItems} />
-        <main className="flex-1 p-8 overflow-y-auto page-bg">
-          <div className="max-w-[1060px]">
-            <Outlet />
+        {!hideChrome && <Sidebar items={navItems} />}
+        <main className={`flex-1 overflow-y-auto page-bg ${hideChrome ? 'p-0' : 'p-8'}`}>
+          <div className={hideChrome ? '' : 'max-w-[1060px]'}>
+            <Outlet context={{ setHideChrome } satisfies StudentLayoutContext} />
           </div>
         </main>
       </div>

@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../../components/ui';
-import { LayoutDashboard, Briefcase, Users, GitBranch, Scale, MessageSquare, Building2 } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Users, GitBranch, Scale, MessageSquare, Building2, Mic } from 'lucide-react';
 import DashboardNav from '../../components/DashboardNav';
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Job Postings', to: '/recruiter/jobs', icon: <Briefcase size={18} /> },
   { label: 'Candidates', to: '/recruiter/candidates', icon: <Users size={18} /> },
   { label: 'Pipeline', to: '/recruiter/pipeline', icon: <GitBranch size={18} /> },
+  { label: 'Interviews', to: '/recruiter/interviews', icon: <Mic size={18} /> },
   { label: 'Comparisons', to: '/recruiter/compare', icon: <Scale size={18} /> },
   { label: 'Feedback', to: '/recruiter/feedback', icon: <MessageSquare size={18} /> },
   { label: 'Organization', to: '/recruiter/organization', icon: <Building2 size={18} /> },

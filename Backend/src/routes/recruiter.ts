@@ -7,6 +7,7 @@ import { Application } from "../models/Application";
 import { SkillVerification } from "../models/SkillVerification";
 import { Notification } from "../models/Notification";
 import { Feedback } from "../models/Feedback";
+import { Interview } from "../models/Interview";
 
 const router = Router();
 router.use(requireAuth);
@@ -542,6 +543,114 @@ router.post("/compare", async (req: AuthRequest, res) => {
     res.json(results.filter(Boolean));
   } catch {
     res.status(500).json({ error: "Failed to compare candidates" });
+  }
+});
+
+// ── Assessment Configuration ──────────────────────────────────
+// PATCH /api/recruiter/jobs/:jobId/stage/:stageIdx/assessment
+// Configure assessment for a specific pipeline stage
+router.patch("/jobs/:jobId/stage/:stageIdx/assessment", async (req: AuthRequest, res) => {
+  try {
+    const job = await JobPosting.findOne({ _id: req.params["jobId"], recruiterId: req.userId });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    const stageIdx = parseInt(String(req.params["stageIdx"] ?? ""), 10);
+    const pipeline = job.pipeline as Array<{ type: string }>;
+    if (isNaN(stageIdx) || stageIdx < 0 || stageIdx >= pipeline.length) {
+      return res.status(400).json({ error: "Invalid stage index" });
+    }
+    if (pipeline[stageIdx].type !== "Online Assessment") {
+      return res.status(400).json({ error: "Stage is not an Online Assessment" });
+    }
+
+    const { type, skills, numQuestionsPerSkill, timeLimitSeconds, premadeQuestions, proctoringEnabled } = req.body as {
+      type?: "ai" | "premade";
+      skills?: string[];
+      numQuestionsPerSkill?: number;
+      timeLimitSeconds?: number;
+      premadeQuestions?: Array<{ question: string; options: string[]; correctIndex: number }>;
+      proctoringEnabled?: boolean;
+    };
+
+    const config: Record<string, unknown> = {};
+    if (type !== undefined) config[`pipeline.${stageIdx}.assessmentConfig.type`] = type;
+    if (skills !== undefined) config[`pipeline.${stageIdx}.assessmentConfig.skills`] = skills;
+    if (numQuestionsPerSkill !== undefined) config[`pipeline.${stageIdx}.assessmentConfig.numQuestionsPerSkill`] = numQuestionsPerSkill;
+    if (timeLimitSeconds !== undefined) config[`pipeline.${stageIdx}.assessmentConfig.timeLimitSeconds`] = timeLimitSeconds;
+    if (premadeQuestions !== undefined) config[`pipeline.${stageIdx}.assessmentConfig.premadeQuestions`] = premadeQuestions;
+    if (proctoringEnabled !== undefined) config[`pipeline.${stageIdx}.assessmentConfig.proctoringEnabled`] = proctoringEnabled;
+
+    const updated = await JobPosting.findByIdAndUpdate(job._id, { $set: config }, { returnDocument: "after" });
+    res.json({ ok: true, pipeline: (updated as { pipeline: unknown[] }).pipeline });
+  } catch {
+    res.status(500).json({ error: "Failed to update assessment config" });
+  }
+});
+
+// ── Interview Transcripts ─────────────────────────────────────
+
+// GET /api/recruiter/interviews/:jobId
+// List all completed interviews for a given job
+router.get("/interviews/:jobId", async (req: AuthRequest, res) => {
+  try {
+    const job = await JobPosting.findOne({ _id: req.params["jobId"], recruiterId: req.userId });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    const interviews = await Interview.find({ jobId: job._id, status: "completed" })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Attach candidate names
+    const studentIds = interviews.map((i: any) => i.studentId);
+    const students = await UserBase.find({ _id: { $in: studentIds } }).select("name").lean();
+    const nameMap = new Map(students.map((s: any) => [s._id.toString(), s.name]));
+
+    const result = interviews.map((i: any) => ({
+      id: i._id,
+      candidateName: nameMap.get(i.studentId.toString()) ?? "Unknown",
+      jobTitle: i.jobTitle,
+      stageIndex: i.stageIndex,
+      durationSeconds: i.durationSeconds,
+      evaluation: i.evaluation,
+      messageCount: i.transcript?.length ?? 0,
+      completedAt: i.updatedAt,
+    }));
+
+    res.json(result);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch interviews" });
+  }
+});
+
+// GET /api/recruiter/interviews/:jobId/:interviewId
+// Get full interview transcript
+router.get("/interviews/:jobId/:interviewId", async (req: AuthRequest, res) => {
+  try {
+    const job = await JobPosting.findOne({ _id: req.params["jobId"], recruiterId: req.userId });
+    if (!job) return res.status(404).json({ error: "Job not found" });
+
+    const interview = await Interview.findOne({
+      _id: req.params["interviewId"],
+      jobId: job._id,
+    }).lean();
+    if (!interview) return res.status(404).json({ error: "Interview not found" });
+
+    const student = await UserBase.findById((interview as any).studentId).select("name email").lean();
+
+    res.json({
+      id: (interview as any)._id,
+      candidateName: (student as any)?.name ?? "Unknown",
+      candidateEmail: (student as any)?.email ?? "",
+      jobTitle: (interview as any).jobTitle,
+      jobDescription: (interview as any).jobDescription,
+      transcript: (interview as any).transcript,
+      evaluation: (interview as any).evaluation,
+      durationSeconds: (interview as any).durationSeconds,
+      status: (interview as any).status,
+      createdAt: (interview as any).createdAt,
+    });
+  } catch {
+    res.status(500).json({ error: "Failed to fetch interview" });
   }
 });
 

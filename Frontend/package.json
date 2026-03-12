@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.32",
     "@tailwindcss/vite": "^4.2.1",
+    "@vladmandic/face-api": "^1.7.15",
     "axios": "^1.13.6",
     "framer-motion": "^12.35.2",
     "lightswind": "^3.1.21",

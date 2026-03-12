@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Badge, Tabs, Modal, Button } from '../../components/ui';
 import PageTransition from '../../components/PageTransition';
 import { studentService } from '../../services/studentService';
@@ -25,10 +26,25 @@ export default function Applications() {
   const [apps, setApps] = useState<Application[]>([]);
   const [filter, setFilter] = useState('All');
   const [detail, setDetail] = useState<Application | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => { studentService.getApplications().then(setApps); }, []);
 
   const filtered = filter === 'All' ? apps : apps.filter(a => a.status === filter);
+
+  /** True when the student's current stage is an Online Assessment they haven't finished. */
+  const canTakeAssessment = (app: Application) => {
+    if (app.status !== 'In Pipeline' || !app.stages || app.pipelineStage == null) return false;
+    const stage = app.stages[app.pipelineStage];
+    return stage?.stageType === 'Online Assessment' && stage.assessmentStatus !== 'completed';
+  };
+
+  /** True when the student's current stage is an AI Interview they haven't finished. */
+  const canTakeInterview = (app: Application) => {
+    if (app.status !== 'In Pipeline' || !app.stages || app.pipelineStage == null) return false;
+    const stage = app.stages[app.pipelineStage];
+    return stage?.stageType === 'AI Interview' && stage.assessmentStatus !== 'completed';
+  };
 
   return (
     <PageTransition>
@@ -71,6 +87,22 @@ export default function Applications() {
                     ))}
                   </div>
                 )}
+                {canTakeAssessment(app) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/student/applications/${app.id}/assessment`); }}
+                    className="mt-3 px-4 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-[13px] font-semibold rounded-[var(--radius-md)] transition"
+                  >
+                    📝 Take Assessment
+                  </button>
+                )}
+                {canTakeInterview(app) && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/student/applications/${app.id}/interview`); }}
+                    className="mt-3 ml-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-semibold rounded-[var(--radius-md)] transition"
+                  >
+                    🎤 Take Interview
+                  </button>
+                )}
               </Card>
             ))}
           </div>
@@ -89,12 +121,29 @@ export default function Applications() {
                 <div key={i} className={`p-4 rounded-[var(--radius-sm)] border ${stage.completed ? 'border-[var(--accent)] bg-[var(--accent-subtle)]' : 'border-[var(--border-subtle)]'}`}>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">{stage.name}</span>
-                    {stage.score != null && <span className="font-[var(--font-mono)] text-sm">{stage.score}%</span>}
+                    <div className="flex items-center gap-2">
+                      {(stage.stageType === 'Online Assessment' || stage.stageType === 'AI Interview') && stage.assessmentStatus && stage.assessmentStatus !== 'completed' && (
+                        <span className="text-[11px] px-2 py-0.5 rounded-full bg-[var(--warning-subtle)] text-[var(--warning)] font-semibold">
+                          {stage.assessmentStatus === 'in_progress' ? 'In Progress' : 'Not Started'}
+                        </span>
+                      )}
+                      {stage.score != null && <span className="font-[var(--font-mono)] text-sm">{stage.score}%</span>}
+                    </div>
                   </div>
                   {stage.feedback && <p className="text-xs text-[var(--text-secondary)] mt-1 bg-[var(--bg-elevated)] p-2 rounded mt-2">{stage.feedback}</p>}
                 </div>
               ))}
             </div>
+            {canTakeAssessment(detail) && (
+              <Button onClick={() => { setDetail(null); navigate(`/student/applications/${detail.id}/assessment`); }}>
+                📝 Take Assessment
+              </Button>
+            )}
+            {canTakeInterview(detail) && (
+              <Button onClick={() => { setDetail(null); navigate(`/student/applications/${detail.id}/interview`); }}>
+                🎤 Take Interview
+              </Button>
+            )}
             <Button onClick={() => setDetail(null)}>Close</Button>
           </div>
         )}

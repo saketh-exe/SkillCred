@@ -3,6 +3,7 @@ import statusRouter from "./status";
 import resumesRouter from "./resumes";
 import interviewRouter from "./assessments/interview";
 import testRouter from "./assessments/test";
+import skillsRouter from "./assessments/skills";
 import githubRouter from "./integrations/github";
 
 const router = Router();
@@ -18,6 +19,9 @@ router.use("/assessments/interview", interviewRouter);
 
 // api/assessments/test -> POST /api/assessments/test
 router.use("/assessments/test", testRouter);
+
+// api/assessments/skills -> POST /api/assessments/skills/generate, /verify
+router.use("/assessments/skills", skillsRouter);
 
 // api/integrations/github/analyze -> POST /api/integrations/github/analyze
 router.use("/integrations/github", githubRouter);

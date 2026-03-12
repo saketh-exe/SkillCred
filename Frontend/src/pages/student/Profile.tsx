@@ -7,7 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useProfileData } from '../../context/ProfileDataContext';
 import { studentService } from '../../services/studentService';
 import { useToast } from '../../components/ui/Toast';
-import { Upload, Loader2, CheckCircle2, Github, ExternalLink, Briefcase, ShieldCheck } from 'lucide-react';
+import { TARGET_ROLES } from '../../services/constants';
+import { Upload, Loader2, CheckCircle2, Github, ExternalLink, Briefcase, ShieldCheck, X, Search, Plus, ChevronDown } from 'lucide-react';
 import type { Skill, Project, StudentUser, ParsedResume } from '../../types';
 
 export default function StudentProfile() {
@@ -21,6 +22,54 @@ export default function StudentProfile() {
   const [resumeUploading, setResumeUploading] = useState(false);
   const [resumeData, setResumeData] = useState<ParsedResume | null>(savedResume);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // ── Target roles editor state ──
+  const [targetRoles, setTargetRoles] = useState<string[]>(student?.targetRoles ?? []);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [roleSearch, setRoleSearch] = useState('');
+  const roleDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(e.target as Node)) {
+        setRoleDropdownOpen(false);
+        setRoleSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filteredRoles = TARGET_ROLES.filter(
+    r => !targetRoles.includes(r) && r.toLowerCase().includes(roleSearch.toLowerCase()),
+  );
+
+  const addRole = async (role: string) => {
+    const updated = [...targetRoles, role];
+    setTargetRoles(updated);
+    setRoleSearch('');
+    setRoleDropdownOpen(false);
+    try {
+      await studentService.updateProfile({ targetRoles: updated } as Partial<StudentUser>);
+      addToast(`Added "${role}" to target roles`, 'success');
+    } catch {
+      setTargetRoles(targetRoles); // revert
+      addToast('Failed to update target roles', 'error');
+    }
+  };
+
+  const removeRole = async (role: string) => {
+    const updated = targetRoles.filter(r => r !== role);
+    setTargetRoles(updated);
+    try {
+      await studentService.updateProfile({ targetRoles: updated } as Partial<StudentUser>);
+      addToast(`Removed "${role}" from target roles`, 'info');
+    } catch {
+      setTargetRoles(targetRoles); // revert
+      addToast('Failed to update target roles', 'error');
+    }
+  };
 
   useEffect(() => {
     studentService.getSkills().then(setSkills);
@@ -88,8 +137,8 @@ export default function StudentProfile() {
             <h1 className="font-display text-[28px] tracking-tight">{ghProfile?.name ?? student.name}</h1>
             <p className="text-[13px] text-[var(--text-secondary)]">{student.university} · {student.degree} · Class of {student.graduationYear}</p>
             {ghProfile?.bio && <p className="text-[12px] text-[var(--text-tertiary)] mt-1">{ghProfile.bio}</p>}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {student.targetRoles.map(r => <Badge key={r} variant="accent">{r}</Badge>)}
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              {targetRoles.map(r => <Badge key={r} variant="accent">{r}</Badge>)}
               {ghProfile && (
                 <a href={ghProfile.profileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] text-[var(--text-tertiary)] hover:text-[var(--accent)]">
                   <Github size={13} /> @{ghProfile.username}
@@ -126,6 +175,62 @@ export default function StudentProfile() {
           <p className="text-sm font-medium">{student.university}</p>
           <p className="text-[13px] text-[var(--text-secondary)]">{student.degree}</p>
           <p className="text-[13px] text-[var(--text-tertiary)]">Expected {student.graduationYear}</p>
+        </Card>
+
+        {/* Target Roles */}
+        <Card className="p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-semibold">Target Roles</h2>
+            <span className="text-[12px] text-[var(--text-tertiary)]">{targetRoles.length} selected</span>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {targetRoles.map(r => (
+              <span key={r} className="inline-flex items-center gap-1.5 px-3 py-1 text-[13px] font-medium bg-[var(--accent-subtle)] text-[var(--accent-text,var(--accent))] rounded-lg">
+                {r}
+                <button onClick={() => removeRole(r)} className="hover:text-[var(--danger)] transition-colors" title={`Remove ${r}`}>
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="relative" ref={roleDropdownRef}>
+            <button
+              onClick={() => setRoleDropdownOpen(v => !v)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-medium border border-dashed border-[var(--border-default)] text-[var(--text-secondary)] rounded-lg hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            >
+              <Plus size={14} /> Add Role <ChevronDown size={12} />
+            </button>
+            {roleDropdownOpen && (
+              <div className="absolute top-10 left-0 z-50 w-72 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-xl overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2.5 border-b border-[var(--border-subtle)]">
+                  <Search size={14} className="text-[var(--text-tertiary)] shrink-0" />
+                  <input
+                    type="text"
+                    value={roleSearch}
+                    onChange={e => setRoleSearch(e.target.value)}
+                    placeholder="Search roles…"
+                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--text-tertiary)]"
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-56 overflow-y-auto">
+                  {filteredRoles.length === 0 ? (
+                    <p className="px-3 py-4 text-[13px] text-[var(--text-tertiary)] text-center">No matching roles</p>
+                  ) : (
+                    filteredRoles.map(r => (
+                      <button
+                        key={r}
+                        onClick={() => addRole(r)}
+                        className="w-full text-left px-3 py-2 text-[13px] hover:bg-[var(--bg-elevated)] transition-colors"
+                      >
+                        {r}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </Card>
 
         {/* Projects */}

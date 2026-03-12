@@ -6,6 +6,8 @@ const ApplicationStageSchema = new Schema(
     completed: { type: Boolean, default: false },
     score: { type: Number },
     feedback: { type: String },
+    assessmentStatus: { type: String, enum: ["not_started", "in_progress", "completed"], default: "not_started" },
+    assessmentReport: { type: Schema.Types.Mixed },
   },
   { _id: false }
 );

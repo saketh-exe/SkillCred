@@ -2,6 +2,8 @@ import { apiFetch } from './api';
 import type {
   StudentUser, Skill, JobMatch, Application, Feedback,
   SkillGap, Notification, Project, ParsedResume, GithubAnalysis, CredibilityReport,
+  AssessmentConfig, AssessmentData, AssessmentVerificationResult,
+  InterviewConfig, InterviewEvaluation,
 } from '../types';
 
 export const studentService = {
@@ -59,5 +61,44 @@ export const studentService = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
-};
 
+  // ── Pipeline Assessments ────────────────────────────────────
+  getAssessmentConfig: (appId: string) =>
+    apiFetch<AssessmentConfig>(`/student/applications/${appId}/assessment`),
+
+  generateAssessment: (appId: string) =>
+    apiFetch<{ success: boolean; data: AssessmentData }>(`/student/applications/${appId}/assessment/generate`, {
+      method: 'POST',
+    }),
+
+  submitAssessmentForStage: (appId: string, data: {
+    answers: Array<{ questionId: string; selectedAnswer: string }>;
+    answerKey: Array<{ questionId: string; skill: string; correctAnswer: string; explanation: string }>;
+    report?: unknown;
+  }) =>
+    apiFetch<{ success: boolean; data: AssessmentVerificationResult }>(`/student/applications/${appId}/assessment/submit`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // ── AI Interview ────────────────────────────────────────────
+  getInterviewConfig: (appId: string) =>
+    apiFetch<InterviewConfig>(`/student/applications/${appId}/interview`),
+
+  startInterview: (appId: string) =>
+    apiFetch<{ interviewId: string; greeting: string }>(`/student/applications/${appId}/interview/start`, {
+      method: 'POST',
+    }),
+
+  sendInterviewMessage: (appId: string, interviewId: string, message: string) =>
+    apiFetch<{ reply: string }>(`/student/applications/${appId}/interview/message`, {
+      method: 'POST',
+      body: JSON.stringify({ interviewId, message }),
+    }),
+
+  endInterview: (appId: string, interviewId: string, durationSeconds: number) =>
+    apiFetch<{ success: boolean; evaluation: InterviewEvaluation }>(`/student/applications/${appId}/interview/end`, {
+      method: 'POST',
+      body: JSON.stringify({ interviewId, durationSeconds }),
+    }),
+};

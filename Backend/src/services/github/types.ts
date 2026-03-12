@@ -1,4 +1,4 @@
-wwwwwwwwwwwwwww// ─── Raw GitHub API shapes ───────────────────────────────────────────────────
+// ─── Raw GitHub API shapes ───────────────────────────────────────────────────
 
 export interface GithubUser {
   login: string;

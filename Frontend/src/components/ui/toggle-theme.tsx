@@ -27,7 +27,18 @@ export function ToggleTheme() {
 
   useEffect(() => {
     applyTheme(theme);
+    window.dispatchEvent(new CustomEvent('skillcred-theme-change', { detail: theme }));
   }, [theme]);
+
+  // Sync when another component changes the theme
+  useEffect(() => {
+    const onThemeChange = (e: Event) => {
+      const t = (e as CustomEvent<Theme>).detail;
+      setTheme(prev => prev !== t ? t : prev);
+    };
+    window.addEventListener('skillcred-theme-change', onThemeChange);
+    return () => window.removeEventListener('skillcred-theme-change', onThemeChange);
+  }, []);
 
   // Initialise on mount without transition
   useEffect(() => {

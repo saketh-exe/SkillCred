@@ -14,6 +14,8 @@ import SkillGapAnalysis from './pages/student/SkillGapAnalysis'
 import ProfileBuilder from './pages/student/ProfileBuilder'
 import JobMatches from './pages/student/JobMatches'
 import Applications from './pages/student/Applications'
+import PipelineAssessment from './pages/student/PipelineAssessment'
+import AIInterview from './pages/student/AIInterview'
 import StudentFeedback from './pages/student/Feedback'
 import Profile from './pages/student/Profile'
 
@@ -24,6 +26,7 @@ import JobPostings from './pages/recruiter/JobPostings'
 import CandidateDiscovery from './pages/recruiter/CandidateDiscovery'
 import CandidateProfile from './pages/recruiter/CandidateProfile'
 import Pipeline from './pages/recruiter/Pipeline'
+import InterviewTranscripts from './pages/recruiter/InterviewTranscripts'
 import Compare from './pages/recruiter/Compare'
 import RecruiterFeedback from './pages/recruiter/Feedback'
 import Organization from './pages/recruiter/Organization'
@@ -45,6 +48,8 @@ function App() {
         <Route path="gap-analysis" element={<SkillGapAnalysis />} />
         <Route path="jobs" element={<JobMatches />} />
         <Route path="applications" element={<Applications />} />
+        <Route path="applications/:appId/assessment" element={<PipelineAssessment />} />
+        <Route path="applications/:appId/interview" element={<AIInterview />} />
         <Route path="feedback" element={<StudentFeedback />} />
         <Route path="profile" element={<Profile />} />
       </Route>
@@ -57,6 +62,7 @@ function App() {
         <Route path="candidates" element={<CandidateDiscovery />} />
         <Route path="candidates/:id" element={<CandidateProfile />} />
         <Route path="pipeline" element={<Pipeline />} />
+        <Route path="interviews" element={<InterviewTranscripts />} />
         <Route path="compare" element={<Compare />} />
         <Route path="feedback" element={<RecruiterFeedback />} />
         <Route path="organization" element={<Organization />} />

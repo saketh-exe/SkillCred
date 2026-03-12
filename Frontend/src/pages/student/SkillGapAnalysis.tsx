@@ -141,13 +141,6 @@ export default function SkillGapAnalysis() {
                             <p className="text-[13px] text-[var(--text-secondary)] mt-1">{m.reason}</p>
                             <Badge className="mt-2">{m.proficiencyNeeded} proficiency needed</Badge>
                           </div>
-                          <Button
-                            variant="secondary"
-                            className="text-xs h-8 shrink-0"
-                            onClick={() => nav('/student/profile-builder')}
-                          >
-                            Add Skill
-                          </Button>
                         </div>
                       </Card>
                     ))}

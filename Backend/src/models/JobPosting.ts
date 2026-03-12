@@ -9,12 +9,34 @@ const RequiredSkillSchema = new Schema(
   { _id: false }
 );
 
+const PremadeQuestionSchema = new Schema(
+  {
+    question: { type: String, required: true },
+    options: { type: [String], required: true },
+    correctIndex: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
+const AssessmentConfigSchema = new Schema(
+  {
+    type: { type: String, enum: ["ai", "premade"], default: "ai" },
+    skills: { type: [String], default: [] },
+    numQuestionsPerSkill: { type: Number, default: 3 },
+    timeLimitSeconds: { type: Number, default: 90 },
+    premadeQuestions: { type: [PremadeQuestionSchema], default: [] },
+    proctoringEnabled: { type: Boolean, default: true },
+  },
+  { _id: false }
+);
+
 const PipelineStageSchema = new Schema(
   {
     name: { type: String, required: true },
     type: { type: String, enum: ["Profile Review", "GitHub Analysis", "Online Assessment", "AI Interview", "Final"], required: true },
     description: { type: String, default: "" },
     maxAdvancing: { type: Number, default: 10 },
+    assessmentConfig: { type: AssessmentConfigSchema },
   },
   { _id: true }
 );

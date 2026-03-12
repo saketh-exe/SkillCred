@@ -32,7 +32,7 @@ export interface RecruiterUser extends User {
 }
 
 // ─── Skills ─────────────────────────────────────────────────────
-export type SkillCategory = 'All' | 'Web' | 'Backend' | 'Data' | 'DevOps' | 'Mobile';
+export type SkillCategory = 'All' | 'Web' | 'Backend' | 'Data' | 'DevOps' | 'Mobile' | 'AI' | 'Security' | 'Testing' | 'Design' | 'Other';
 export type SkillStatus = 'Verified' | 'Not Verified' | 'In Progress';
 export type Difficulty = 'Beginner' | 'Intermediate' | 'Advanced';
 
@@ -142,6 +142,57 @@ export interface ApplicationStage {
   completed: boolean;
   score?: number;
   feedback?: string;
+  assessmentStatus?: 'not_started' | 'in_progress' | 'completed';
+  stageType?: string;
+}
+
+// ─── Pipeline Assessments ────────────────────────────────────────
+export interface AssessmentConfig {
+  stageIndex: number;
+  stageName: string;
+  assessmentType: 'ai' | 'premade';
+  skills: string[];
+  numQuestionsPerSkill: number;
+  timeLimitSeconds: number;
+  premadeQuestions?: { question: string; options: string[]; correctIndex: number }[];
+  proctoringEnabled: boolean;
+}
+
+export interface AssessmentQuestion {
+  id: string;
+  skill: string;
+  question: string;
+  options: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+}
+
+export interface AssessmentSkillSection {
+  skill: string;
+  questions: AssessmentQuestion[];
+  totalQuestions: number;
+}
+
+export interface AssessmentData {
+  candidateName?: string;
+  date: string;
+  skills: AssessmentSkillSection[];
+  totalQuestionsGenerated: number;
+  answerKey: { questionId: string; skill: string; correctAnswer: string; explanation: string }[];
+}
+
+export interface AssessmentVerificationResult {
+  totalQuestions: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+  score: number;
+  results: {
+    questionId: string;
+    skill: string;
+    isCorrect: boolean;
+    correctAnswer: string;
+    selectedAnswer: string;
+    explanation: string;
+  }[];
 }
 
 // ─── Pipeline ───────────────────────────────────────────────────
@@ -346,4 +397,52 @@ export interface CredibilityReport {
   strengths: string[];
   redFlags: string[];
   recommendations: string[];
+}
+
+// ─── AI Interview ───────────────────────────────────────────────
+export interface InterviewConfig {
+  stageIndex: number;
+  stageName: string;
+  jobTitle: string;
+  jobDescription: string;
+  requiredSkills: string[];
+  candidateName: string;
+  existingInterviewId: string | null;
+}
+
+export interface InterviewMessage {
+  role: 'interviewer' | 'candidate';
+  text: string;
+  timestamp?: string;
+}
+
+export interface InterviewEvaluation {
+  overallScore: number;
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+}
+
+export interface InterviewTranscript {
+  id: string;
+  candidateName: string;
+  candidateEmail?: string;
+  jobTitle: string;
+  jobDescription?: string;
+  transcript: InterviewMessage[];
+  evaluation: InterviewEvaluation;
+  durationSeconds: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface InterviewListItem {
+  id: string;
+  candidateName: string;
+  jobTitle: string;
+  stageIndex: number;
+  durationSeconds: number;
+  evaluation: InterviewEvaluation;
+  messageCount: number;
+  completedAt: string;
 }

@@ -1,7 +1,7 @@
 import { apiFetch } from './api';
 import type {
   RecruiterUser, JobPosting, Candidate, PipelineCandidate,
-  Feedback, Organization, Notification,
+  Feedback, Organization, Notification, InterviewListItem, InterviewTranscript,
 } from '../types';
 
 type ApiDoc = { _id: string; [key: string]: unknown };
@@ -108,4 +108,11 @@ export const recruiterService = {
       method: 'PATCH',
       body: JSON.stringify({ studentId }),
     }),
+
+  // ── Interview Transcripts ───────────────────────────────────
+  getInterviews: (jobId: string) =>
+    apiFetch<InterviewListItem[]>(`/recruiter/interviews/${jobId}`),
+
+  getInterviewTranscript: (jobId: string, interviewId: string) =>
+    apiFetch<InterviewTranscript>(`/recruiter/interviews/${jobId}/${interviewId}`),
 };
