@@ -82,19 +82,10 @@ export const studentService = {
     }),
 
   // ── AI Interview ────────────────────────────────────────────
+  // Live audio interview uses WebSocket (see AIInterview.tsx)
+  // These endpoints handle config loading and post-interview evaluation only
   getInterviewConfig: (appId: string) =>
     apiFetch<InterviewConfig>(`/student/applications/${appId}/interview`),
-
-  startInterview: (appId: string) =>
-    apiFetch<{ interviewId: string; greeting: string }>(`/student/applications/${appId}/interview/start`, {
-      method: 'POST',
-    }),
-
-  sendInterviewMessage: (appId: string, interviewId: string, message: string) =>
-    apiFetch<{ reply: string }>(`/student/applications/${appId}/interview/message`, {
-      method: 'POST',
-      body: JSON.stringify({ interviewId, message }),
-    }),
 
   endInterview: (appId: string, interviewId: string, durationSeconds: number) =>
     apiFetch<{ success: boolean; evaluation: InterviewEvaluation }>(`/student/applications/${appId}/interview/end`, {

@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { Search, Star, GitFork, ExternalLink, Code, Users, BookOpen, Calendar, Loader2, AlertCircle, ChevronDown, ChevronUp, FileCode, FilePlus, FileMinus, FileEdit } from 'lucide-react';
+import { Search, Star, GitFork, ExternalLink, Code, Users, BookOpen, Calendar, Loader2, AlertCircle, ChevronDown, ChevronUp, FileCode, FilePlus, FileMinus, FileEdit, CheckCircle } from 'lucide-react';
 import { Card, Badge, Button, ProgressBar } from '../../components/ui';
 import PageTransition from '../../components/PageTransition';
+import { studentService } from '../../services/studentService';
 import type { GithubAnalysis, GithubRepoProfile, GithubCommitSummary, GithubCommitFile } from '../../types';
 
 const API_BASE = '/api/integrations/github';
@@ -157,6 +158,8 @@ export default function GitHubAnalyzer() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAllRepos, setShowAllRepos] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const analyze = useCallback(async () => {
     const trimmed = username.trim();
@@ -165,6 +168,7 @@ export default function GitHubAnalyzer() {
     setError(null);
     setAnalysis(null);
     setShowAllRepos(false);
+    setSaved(false);
 
     try {
       const res = await fetch(`${API_BASE}/analyze?username=${encodeURIComponent(trimmed)}`);
@@ -179,6 +183,19 @@ export default function GitHubAnalyzer() {
       setLoading(false);
     }
   }, [username]);
+
+  const saveToProfile = useCallback(async () => {
+    if (!analysis) return;
+    setSaving(true);
+    try {
+      await studentService.saveProfileData({ githubAnalysis: analysis });
+      setSaved(true);
+    } catch {
+      // silent — user can retry
+    } finally {
+      setSaving(false);
+    }
+  }, [analysis]);
 
   const visibleRepos = showAllRepos ? analysis?.repositories ?? [] : (analysis?.repositories ?? []).slice(0, 6);
   const topLangs = (analysis?.languages ?? []).slice(0, 8);
@@ -252,6 +269,18 @@ export default function GitHubAnalyzer() {
                 </div>
                 <p className="text-[13px] text-[var(--text-secondary)]">@{analysis.profile.username}</p>
                 {analysis.profile.bio && <p className="text-[13px] text-[var(--text-secondary)] mt-1">{analysis.profile.bio}</p>}
+              </div>
+              <div className="flex-shrink-0">
+                {saved ? (
+                  <div className="flex items-center gap-1.5 text-[var(--success)] text-sm font-medium">
+                    <CheckCircle size={16} />
+                    Skills verified!
+                  </div>
+                ) : (
+                  <Button onClick={saveToProfile} disabled={saving} variant="secondary" className="h-9 px-4 text-sm">
+                    {saving ? <><Loader2 size={14} className="animate-spin mr-1.5" />Saving...</> : 'Save & Verify Skills'}
+                  </Button>
+                )}
               </div>
             </div>
           </Card>

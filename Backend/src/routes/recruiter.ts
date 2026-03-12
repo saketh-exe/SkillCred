@@ -100,6 +100,8 @@ router.delete("/jobs/:id", async (req: AuthRequest, res) => {
   try {
     const job = await JobPosting.findOneAndDelete({ _id: req.params["id"], recruiterId: req.userId });
     if (!job) return res.status(404).json({ error: "Job not found" });
+    // Remove all applications for this job so students no longer see it
+    await Application.deleteMany({ jobId: job._id });
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Failed to delete job posting" });

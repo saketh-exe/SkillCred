@@ -12,6 +12,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/api/interview/live': {
+        target: 'ws://localhost:3000',
+        ws: true,
+      },
       '/api': 'http://localhost:3000',
     },
   },

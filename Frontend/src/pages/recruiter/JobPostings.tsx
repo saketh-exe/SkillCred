@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Card, Badge, Button, Modal } from '../../components/ui';
 import { useToast } from '../../components/ui/Toast';
 import PageTransition from '../../components/PageTransition';
@@ -14,6 +14,8 @@ export default function JobPostings() {
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [createStep, setCreateStep] = useState(1);
+  const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Form state
   const [title, setTitle] = useState('');
@@ -47,6 +49,21 @@ export default function JobPostings() {
     setTitle(''); setDepartment(''); setLocation(''); setWorkMode('Hybrid');
     setEmpType('Full-time'); setExpLevel('Intermediate'); setSalary('');
     setDescription(''); setReqSkills([]); setPipeline([]);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteJobId) return;
+    setDeleting(true);
+    try {
+      await recruiterService.deleteJob(deleteJobId);
+      setJobs(prev => prev.filter(j => j.id !== deleteJobId));
+      addToast('Job posting deleted.', 'success');
+    } catch {
+      addToast('Failed to delete job posting.', 'error');
+    } finally {
+      setDeleting(false);
+      setDeleteJobId(null);
+    }
   };
 
   const handlePublish = async () => {
@@ -113,6 +130,9 @@ export default function JobPostings() {
                   <div className="flex gap-2">
                     <Button variant="ghost" className="text-xs h-7 px-2">Edit</Button>
                     <Button variant="ghost" className="text-xs h-7 px-2">Candidates</Button>
+                    <Button variant="ghost" className="text-xs h-7 px-2 text-[var(--danger)] hover:bg-[var(--danger-subtle)]" onClick={() => setDeleteJobId(job.id)}>
+                      <Trash2 size={13} />
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -120,6 +140,19 @@ export default function JobPostings() {
           </tbody>
         </table>
       </Card>
+
+      {/* Delete Confirmation Modal */}
+      <Modal open={!!deleteJobId} onClose={() => setDeleteJobId(null)} title="Delete Job Posting" size="sm">
+        <p className="text-sm text-[var(--text-secondary)] mb-6">
+          This will permanently delete the job posting and remove it from all applicants' history. This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={() => setDeleteJobId(null)}>Cancel</Button>
+          <Button onClick={handleDelete} disabled={deleting} className="bg-[var(--danger)] hover:bg-[var(--danger)] text-white border-[var(--danger)]">
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </div>
+      </Modal>
 
       {/* Create Job Modal */}
       <Modal open={showCreate} onClose={() => { setShowCreate(false); setCreateStep(1); resetForm(); }} title="Create Job Posting" size="xl">

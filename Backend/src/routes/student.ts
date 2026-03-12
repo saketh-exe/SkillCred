@@ -264,7 +264,7 @@ router.patch("/profile-data", async (req: AuthRequest, res) => {
   try {
     const { parsedResume, githubAnalysis, credibilityReport } = req.body as {
       parsedResume?: unknown;
-      githubAnalysis?: unknown;
+      githubAnalysis?: { languages?: Array<{ name: string }> } | null;
       credibilityReport?: unknown;
     };
     const update: Record<string, unknown> = {};
@@ -272,6 +272,21 @@ router.patch("/profile-data", async (req: AuthRequest, res) => {
     if (githubAnalysis !== undefined) update["githubAnalysis"] = githubAnalysis;
     if (credibilityReport !== undefined) update["credibilityReport"] = credibilityReport;
     await UserBase.findByIdAndUpdate(req.userId, { $set: update });
+
+    // Sync detected GitHub languages → SkillVerification (mark as Verified)
+    if (githubAnalysis && Array.isArray(githubAnalysis.languages)) {
+      const langNames = githubAnalysis.languages.map((l) => l.name).filter(Boolean);
+      await Promise.all(
+        langNames.map((name) =>
+          SkillVerification.findOneAndUpdate(
+            { studentId: req.userId, name },
+            { $set: { status: "Verified", ...getSkillMeta(name) } },
+            { upsert: true, new: true }
+          )
+        )
+      );
+    }
+
     res.json({ ok: true });
   } catch {
     res.status(500).json({ error: "Failed to save profile data" });
@@ -645,97 +660,11 @@ router.get("/applications/:appId/interview", async (req: AuthRequest, res) => {
   }
 });
 
-// POST /api/student/applications/:appId/interview/start
-// Creates an interview session and returns the AI's opening message
-router.post("/applications/:appId/interview/start", async (req: AuthRequest, res) => {
-  try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY is not configured" });
+// POST /api/student/applications/:appId/interview/start is now handled by the WebSocket relay
+// (see geminiLiveRelay.ts)
 
-    const resolved = await getInterviewContext(String(req.params["appId"]), req.userId!);
-    if (!resolved) return res.status(400).json({ error: "Current stage is not an AI Interview or application not found" });
-
-    // Mark assessment as in_progress
-    await Application.findByIdAndUpdate(resolved.app._id, {
-      $set: { [`stages.${resolved.stageIdx}.assessmentStatus`]: "in_progress" },
-    });
-
-    const service = new AIInterviewerService(apiKey);
-    const greeting = await service.startInterview(resolved.context);
-
-    const interview = await Interview.create({
-      applicationId: resolved.app._id,
-      studentId: req.userId,
-      jobId: resolved.job._id,
-      stageIndex: resolved.stageIdx,
-      jobTitle: resolved.context.jobTitle,
-      jobDescription: resolved.context.jobDescription,
-      transcript: [{ role: "interviewer", text: greeting }],
-    });
-
-    res.json({
-      interviewId: interview._id,
-      greeting,
-    });
-  } catch (err) {
-    console.error("Interview start error:", err);
-    res.status(500).json({ error: "Failed to start interview" });
-  }
-});
-
-// POST /api/student/applications/:appId/interview/message
-// Send candidate answer and get next interviewer response
-router.post("/applications/:appId/interview/message", async (req: AuthRequest, res) => {
-  try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: "GEMINI_API_KEY is not configured" });
-
-    const { interviewId, message } = req.body as { interviewId: string; message: string };
-    if (!interviewId || !message?.trim()) {
-      return res.status(400).json({ error: "interviewId and message are required" });
-    }
-
-    const interview = await Interview.findOne({
-      _id: interviewId,
-      studentId: req.userId,
-      status: "in_progress",
-    });
-    if (!interview) return res.status(404).json({ error: "Interview session not found" });
-
-    const resolved = await getInterviewContext(String(req.params["appId"]), req.userId!);
-    if (!resolved) return res.status(400).json({ error: "Application context invalid" });
-
-    const transcript = (interview as unknown as { transcript: Array<{ role: string; text: string }> }).transcript;
-
-    const service = new AIInterviewerService(apiKey);
-    const reply = await service.chat(
-      resolved.context,
-      transcript.map(t => ({ role: t.role as "interviewer" | "candidate", text: t.text })),
-      message,
-    );
-
-    // Append both messages to transcript
-    await Interview.findByIdAndUpdate(interviewId, {
-      $push: {
-        transcript: {
-          $each: [
-            { role: "candidate", text: message, timestamp: new Date() },
-            { role: "interviewer", text: reply, timestamp: new Date() },
-          ],
-        },
-      },
-    });
-
-    res.json({ reply });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (msg.includes("Rate limited")) {
-      return res.status(429).json({ error: msg });
-    }
-    console.error("Interview message error:", err);
-    res.status(500).json({ error: "Failed to process message" });
-  }
-});
+// POST /api/student/applications/:appId/interview/message is now handled by the WebSocket relay
+// (real-time audio is streamed via WebSocket instead of HTTP request/response)
 
 // POST /api/student/applications/:appId/interview/end
 // Ends the interview, evaluates the transcript, saves results

@@ -2,40 +2,36 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
 import { Mic, MicOff, Video, VideoOff, PhoneOff, MessageSquare, X } from 'lucide-react';
 import { studentService } from '../../services/studentService';
+import { getToken } from '../../services/api';
 import type { InterviewConfig, InterviewMessage, InterviewEvaluation } from '../../types';
 import type { StudentLayoutContext } from './StudentLayout';
 
 /* ------------------------------------------------------------------ */
-/*  Speech helpers (browser Web Speech API)                           */
+/*  PCM ↔ AudioBuffer helpers                                         */
 /* ------------------------------------------------------------------ */
 
-const SpeechRecognition =
-  (window as any).SpeechRecognition ?? (window as any).webkitSpeechRecognition;
+/** Decode base64 PCM16 (24 kHz mono) → Float32Array */
+function decodePCM16(base64: string): Float32Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const int16 = new Int16Array(bytes.buffer);
+  const float32 = new Float32Array(int16.length);
+  for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+  return float32;
+}
 
-function speakText(text: string, onEnd?: () => void) {
-  // Cancel any queued/stuck speech first (Chrome TTS can get stuck)
-  speechSynthesis.cancel();
-
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 1;
-  u.pitch = 1;
-
-  let finished = false;
-  const finish = () => {
-    if (finished) return;
-    finished = true;
-    clearTimeout(safetyTimer);
-    onEnd?.();
-  };
-
-  u.onend = finish;
-  u.onerror = finish;
-
-  // Safety timeout — Chrome TTS can silently hang. Estimate ~80ms per char.
-  const estimatedMs = Math.max(4000, text.length * 80);
-  const safetyTimer = setTimeout(finish, estimatedMs);
-
-  speechSynthesis.speak(u);
+/** Encode Float32Array → base64 PCM16 */
+function encodePCM16(float32: Float32Array): string {
+  const int16 = new Int16Array(float32.length);
+  for (let i = 0; i < float32.length; i++) {
+    const s = Math.max(-1, Math.min(1, float32[i]));
+    int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+  }
+  const bytes = new Uint8Array(int16.buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
 }
 
 /* ------------------------------------------------------------------ */
@@ -55,17 +51,10 @@ export default function AIInterview() {
   const [config, setConfig] = useState<InterviewConfig | null>(null);
   const [interviewId, setInterviewId] = useState<string | null>(null);
 
-  // Refs to break stale closures in speech recognition callbacks
-  const interviewIdRef = useRef<string | null>(null);
-  const isProcessingRef = useRef(false);
-  const micEnabledRef = useRef(true);
-
   // ── Conversation ────────────────────────────────────────────
   const [messages, setMessages] = useState<InterviewMessage[]>([]);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [interimText, setInterimText] = useState('');
+  const [aiSpeaking, setAiSpeaking] = useState(false);
+  const [currentAiText, setCurrentAiText] = useState('');
 
   // ── Controls ────────────────────────────────────────────────
   const [micEnabled, setMicEnabled] = useState(true);
@@ -80,7 +69,15 @@ export default function AIInterview() {
   // ── Media ───────────────────────────────────────────────────
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const recognitionRef = useRef<any>(null);
+
+  // ── WebSocket & Audio ───────────────────────────────────────
+  const wsRef = useRef<WebSocket | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const audioQueueRef = useRef<Float32Array[]>([]);
+  const isPlayingRef = useRef(false);
+  const micEnabledRef = useRef(true);
 
   // ── Evaluation ──────────────────────────────────────────────
   const [evaluation, setEvaluation] = useState<InterviewEvaluation | null>(null);
@@ -98,9 +95,7 @@ export default function AIInterview() {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  /* ── Keep refs in sync with state ── */
-  useEffect(() => { interviewIdRef.current = interviewId; }, [interviewId]);
-  useEffect(() => { isProcessingRef.current = isProcessing; }, [isProcessing]);
+  /* ── Keep ref in sync ── */
   useEffect(() => { micEnabledRef.current = micEnabled; }, [micEnabled]);
 
   /* ── Timer tick ── */
@@ -126,12 +121,10 @@ export default function AIInterview() {
   /* ── Camera stream ── */
   const startCamera = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
-    } catch {
-      // Camera not available — that's ok, continue without
-    }
+    } catch { /* Camera not available */ }
   }, []);
 
   const stopCamera = useCallback(() => {
@@ -145,172 +138,210 @@ export default function AIInterview() {
     return stopCamera;
   }, [phase, cameraEnabled, startCamera, stopCamera]);
 
-  /* ── Toggle camera track ── */
   useEffect(() => {
     const videoTrack = streamRef.current?.getVideoTracks()[0];
     if (videoTrack) videoTrack.enabled = cameraEnabled;
   }, [cameraEnabled]);
 
-  /* ── Send candidate message → get AI reply (uses refs to avoid stale closures) ── */
-  const handleCandidateMessage = useCallback(async (text: string) => {
-    const curId = interviewIdRef.current;
-    if (!appId || !curId || isProcessingRef.current) return;
-    setIsProcessing(true);
-    isProcessingRef.current = true;
+  /* ── Audio playback (Gemini response) ── */
+  const playAudioQueue = useCallback(() => {
+    if (isPlayingRef.current) return;
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
 
-    const candidateMsg: InterviewMessage = { role: 'candidate', text };
-    setMessages(prev => [...prev, candidateMsg]);
+    const chunk = audioQueueRef.current.shift();
+    if (!chunk) {
+      isPlayingRef.current = false;
+      setAiSpeaking(false);
+      return;
+    }
+
+    isPlayingRef.current = true;
+    setAiSpeaking(true);
+
+    // Gemini native audio outputs at 24kHz
+    const buffer = ctx.createBuffer(1, chunk.length, 24000);
+    buffer.getChannelData(0).set(chunk);
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+    source.onended = () => {
+      isPlayingRef.current = false;
+      playAudioQueue();
+    };
+    source.start();
+  }, []);
+
+  /* ── Mic capture via AudioWorklet ── */
+  const startMic = useCallback(async () => {
+    const ctx = audioContextRef.current;
+    if (!ctx) return;
 
     try {
-      const { reply } = await studentService.sendInterviewMessage(appId, curId, text);
-      const aiMsg: InterviewMessage = { role: 'interviewer', text: reply };
-      setMessages(prev => [...prev, aiMsg]);
-
-      setIsSpeaking(true);
-      speakText(reply, () => {
-        setIsSpeaking(false);
-        setIsProcessing(false);
-        isProcessingRef.current = false;
-        if (micEnabledRef.current) startListeningRef.current();
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true },
       });
-    } catch (err: any) {
-      if (err.message?.includes('Rate limited')) {
-        setTimeout(() => {
-          setIsProcessing(false);
-          isProcessingRef.current = false;
-          startListeningRef.current();
-        }, 3000);
-        return;
-      }
-      setMessages(prev => [...prev, { role: 'interviewer', text: '(Sorry, I had a technical issue. Could you repeat that?)' }]);
-      setIsProcessing(false);
-      isProcessingRef.current = false;
-      if (micEnabledRef.current) setTimeout(() => startListeningRef.current(), 2000);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appId]);
+      micStreamRef.current = micStream;
 
-  const handleCandidateMessageRef = useRef(handleCandidateMessage);
-  useEffect(() => { handleCandidateMessageRef.current = handleCandidateMessage; }, [handleCandidateMessage]);
+      // Use ScriptProcessor as fallback (AudioWorklet needs a separate module file)
+      const source = ctx.createMediaStreamSource(micStream);
+      // We need to resample to 16kHz — create an offline approach or use ScriptProcessor
+      const processor = ctx.createScriptProcessor(4096, 1, 1);
+      processor.onaudioprocess = (e) => {
+        if (!micEnabledRef.current) return;
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
-  /* ── Speech recognition ── */
-  const lastInterimRef = useRef('');
+        const inputData = e.inputBuffer.getChannelData(0);
 
-  const startListening = useCallback(() => {
-    if (!SpeechRecognition || !micEnabledRef.current) return;
-
-    // Stop any existing recognition first
-    try { recognitionRef.current?.stop(); } catch { /* ignore */ }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;   // one utterance at a time — most reliable
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    let gotFinalResult = false;
-
-    recognition.onstart = () => {
-      setIsListening(true);
-      lastInterimRef.current = '';
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-
-      // If we never got a final result but had interim text, submit that instead
-      // (handles the case where the browser cuts off without finalizing)
-      if (!gotFinalResult && lastInterimRef.current.trim() && !isProcessingRef.current) {
-        const text = lastInterimRef.current.trim();
-        lastInterimRef.current = '';
-        setInterimText('');
-        handleCandidateMessageRef.current(text);
-        return;
-      }
-
-      lastInterimRef.current = '';
-      setInterimText('');
-
-      // Auto-restart if we didn't capture anything and aren't processing
-      if (!gotFinalResult && !isProcessingRef.current && micEnabledRef.current) {
-        setTimeout(() => startListeningRef.current(), 400);
-      }
-    };
-
-    recognition.onresult = (e: any) => {
-      let interim = '';
-      let final = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) final += t;
-        else interim += t;
-      }
-      if (interim) lastInterimRef.current = interim;
-      setInterimText(interim);
-
-      if (final) {
-        gotFinalResult = true;
-        lastInterimRef.current = '';
-        setInterimText('');
-        handleCandidateMessageRef.current(final.trim());
-      }
-    };
-
-    recognition.onerror = (e: any) => {
-      // 'no-speech' and 'aborted' are benign — auto-restart
-      if (e.error === 'no-speech' || e.error === 'aborted') {
-        setIsListening(false);
-        setInterimText('');
-        lastInterimRef.current = '';
-        if (!isProcessingRef.current && micEnabledRef.current) {
-          setTimeout(() => startListeningRef.current(), 500);
+        // Downsample from AudioContext sample rate to 16kHz
+        const ratio = ctx.sampleRate / 16000;
+        const outputLength = Math.floor(inputData.length / ratio);
+        const output = new Float32Array(outputLength);
+        for (let i = 0; i < outputLength; i++) {
+          output[i] = inputData[Math.floor(i * ratio)];
         }
-        return;
-      }
-      setIsListening(false);
-      setInterimText('');
+
+        const base64 = encodePCM16(output);
+        ws.send(JSON.stringify({ type: 'audio', data: base64 }));
+      };
+      source.connect(processor);
+      processor.connect(ctx.destination); // Required for ScriptProcessor to work
+      workletNodeRef.current = processor as any;
+    } catch (err) {
+      console.error('Mic start error:', err);
+    }
+  }, []);
+
+  const stopMic = useCallback(() => {
+    micStreamRef.current?.getTracks().forEach(t => t.stop());
+    micStreamRef.current = null;
+    try { workletNodeRef.current?.disconnect(); } catch { /* ignore */ }
+    workletNodeRef.current = null;
+  }, []);
+
+  /* ── WebSocket connection to backend relay ── */
+  const connectWebSocket = useCallback(() => {
+    if (!appId) return;
+    const token = getToken();
+    if (!token) {
+      setError('Not authenticated');
+      return;
+    }
+
+    const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${proto}://${window.location.host}/api/interview/live?token=${encodeURIComponent(token)}&appId=${encodeURIComponent(appId)}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      // Connection established, waiting for setup_complete from Gemini
     };
 
-    recognitionRef.current = recognition;
-    recognition.start();
-  }, []);
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
 
-  const startListeningRef = useRef(startListening);
-  useEffect(() => { startListeningRef.current = startListening; }, [startListening]);
+        switch (msg.type) {
+          case 'interview_created':
+            setInterviewId(msg.interviewId);
+            break;
 
-  const stopListening = useCallback(() => {
-    try { recognitionRef.current?.stop(); } catch { /* ignore */ }
-    setIsListening(false);
-    setInterimText('');
-  }, []);
+          case 'setup_complete':
+            // Gemini session is ready, start capturing mic
+            startMic();
+            break;
+
+          case 'audio': {
+            // Gemini audio response — queue it for playback
+            const pcmData = decodePCM16(msg.data);
+            audioQueueRef.current.push(pcmData);
+            playAudioQueue();
+            break;
+          }
+
+          case 'transcript':
+            if (msg.role === 'interviewer') {
+              if (msg.partial) {
+                setCurrentAiText(prev => prev + msg.text);
+              } else {
+                setMessages(prev => [...prev, { role: 'interviewer', text: msg.text }]);
+                setCurrentAiText('');
+              }
+            } else if (msg.role === 'candidate' && !msg.partial) {
+              setMessages(prev => [...prev, { role: 'candidate', text: msg.text }]);
+            }
+            break;
+
+          case 'turn_complete':
+            // AI finished speaking
+            break;
+
+          case 'interrupted':
+            // User interrupted AI
+            audioQueueRef.current.length = 0;
+            setAiSpeaking(false);
+            isPlayingRef.current = false;
+            break;
+
+          case 'error':
+            console.error('Server error:', msg.message);
+            if (phase === 'active') {
+              setError(msg.message);
+            }
+            break;
+        }
+      } catch { /* ignore parse errors */ }
+    };
+
+    ws.onerror = () => {
+      setError('WebSocket connection failed');
+    };
+
+    ws.onclose = () => {
+      // Connection closed
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appId, startMic, playAudioQueue]);
 
   /* ── Start interview ── */
   const beginInterview = async () => {
     if (!appId) return;
     setPhase('active');
-    try {
-      const { interviewId: id, greeting } = await studentService.startInterview(appId);
-      setInterviewId(id);
-      interviewIdRef.current = id;
-      const aiMsg: InterviewMessage = { role: 'interviewer', text: greeting };
-      setMessages([aiMsg]);
 
-      setIsSpeaking(true);
-      speakText(greeting, () => {
-        setIsSpeaking(false);
-        if (micEnabledRef.current) startListeningRef.current();
-      });
-    } catch (e: any) {
-      setError(e.message);
-      setPhase('ready');
-    }
+    // Create AudioContext
+    const ctx = new AudioContext({ sampleRate: 48000 });
+    audioContextRef.current = ctx;
+
+    // Resume context (required after user gesture)
+    if (ctx.state === 'suspended') await ctx.resume();
+
+    // Connect WebSocket — this triggers Gemini session creation + greeting
+    connectWebSocket();
   };
 
   /* ── End interview ── */
   const endInterview = async () => {
-    stopListening();
-    speechSynthesis.cancel();
     clearInterval(timerRef.current);
     setPhase('ending');
+
+    // Tell backend to close Gemini session
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'end' }));
+      ws.close();
+    }
+    wsRef.current = null;
+
+    // Stop mic and audio
+    stopMic();
+    audioQueueRef.current.length = 0;
+    isPlayingRef.current = false;
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
 
     if (!appId || !interviewId) { navigate(-1); return; }
 
@@ -322,6 +353,16 @@ export default function AIInterview() {
       setPhase('results');
     }
   };
+
+  /* ── Cleanup on unmount ── */
+  useEffect(() => {
+    return () => {
+      wsRef.current?.close();
+      stopMic();
+      audioContextRef.current?.close().catch(() => {});
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── Format timer ── */
   const fmt = (s: number) => {
@@ -363,9 +404,9 @@ export default function AIInterview() {
         </div>
         <h1 className="font-display text-[28px] tracking-tight">AI Interview</h1>
         <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-          You're about to start a live AI-powered interview for <strong>{config.jobTitle}</strong>. 
-          The AI interviewer will ask you questions based on the job description and required skills. 
-          Speak naturally — your microphone will capture your responses.
+          You're about to start a live AI-powered voice interview for <strong>{config.jobTitle}</strong>. 
+          The AI interviewer will speak with you naturally using Gemini's native audio. 
+          Speak naturally — the AI will hear you in real time and respond with voice.
         </p>
         <div className="w-full bg-[var(--bg-elevated)] rounded-[var(--radius-md)] p-4 text-left">
           <p className="text-[11px] uppercase tracking-wider font-semibold text-[var(--text-tertiary)] mb-2">Skills being evaluated</p>
@@ -379,6 +420,7 @@ export default function AIInterview() {
           <p>🎤 Make sure your microphone is working</p>
           <p>📷 Camera is optional but recommended</p>
           <p>🔇 Find a quiet environment</p>
+          <p>🔊 Make sure your speakers/headphones are on</p>
         </div>
         {error && (
           <div className="w-full px-4 py-3 bg-[var(--danger-subtle,#fef2f2)] border border-[var(--danger,#ef4444)]/30 rounded-[var(--radius-md)] text-[13px] text-[var(--danger,#ef4444)]">
@@ -473,12 +515,12 @@ export default function AIInterview() {
         {/* AI Interviewer avatar */}
         <div className="flex flex-col items-center gap-4">
           <div className={`w-40 h-40 rounded-full flex items-center justify-center text-5xl transition-all duration-300 ${
-            isSpeaking ? 'bg-[#2563eb] ring-4 ring-[#3b82f6]/40 scale-105' : 'bg-[#1e293b]'
+            aiSpeaking ? 'bg-[#2563eb] ring-4 ring-[#3b82f6]/40 scale-105' : 'bg-[#1e293b]'
           }`}>
             🤖
           </div>
           <span className="text-sm text-white/60">AI Interviewer</span>
-          {isSpeaking && (
+          {aiSpeaking && (
             <div className="flex gap-1">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="w-1 bg-blue-400 rounded-full animate-pulse"
@@ -497,7 +539,7 @@ export default function AIInterview() {
             ) : (
               <span className="text-5xl">👤</span>
             )}
-            {isListening && (
+            {micEnabled && (
               <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
@@ -513,10 +555,9 @@ export default function AIInterview() {
 
         {/* Live status */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
-          {isSpeaking && <p className="text-sm text-blue-300 animate-pulse mb-1">Interviewer is speaking…</p>}
-          {isListening && <p className="text-sm text-green-300 animate-pulse mb-1">Listening to you…</p>}
-          {isProcessing && !isSpeaking && <p className="text-sm text-yellow-300 animate-pulse mb-1">Processing…</p>}
-          {interimText && <p className="text-sm text-white/50 italic max-w-md">"{interimText}"</p>}
+          {aiSpeaking && <p className="text-sm text-blue-300 animate-pulse mb-1">Interviewer is speaking…</p>}
+          {micEnabled && !aiSpeaking && <p className="text-sm text-green-300 animate-pulse mb-1">Listening to you…</p>}
+          {currentAiText && <p className="text-sm text-white/50 italic max-w-md truncate">"{currentAiText}"</p>}
         </div>
       </div>
 
@@ -544,6 +585,14 @@ export default function AIInterview() {
                 </div>
               </div>
             ))}
+            {currentAiText && (
+              <div className="flex gap-2">
+                <div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-sm bg-[#1e293b]">🤖</div>
+                <div className="max-w-[85%] px-3 py-2 rounded-xl text-[13px] leading-relaxed bg-[#1e293b] text-white/60 rounded-bl-sm italic">
+                  {currentAiText}…
+                </div>
+              </div>
+            )}
             <div ref={transcriptEndRef} />
           </div>
         </div>
@@ -556,8 +605,8 @@ export default function AIInterview() {
           const next = !micEnabled;
           setMicEnabled(next);
           micEnabledRef.current = next;
-          if (!next) stopListening();
-          else if (!isSpeaking && !isProcessing) startListening();
+          // Mute/unmute mic track
+          micStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = next; });
         }}
           className={`w-12 h-12 rounded-full flex items-center justify-center transition ${
             micEnabled ? 'bg-[#334155] hover:bg-[#475569]' : 'bg-red-600 hover:bg-red-700'

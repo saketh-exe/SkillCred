@@ -85,7 +85,10 @@ export default function Compare() {
                 {compared.map(c => (
                   <td key={c.id} className="px-4 py-3 text-center">
                     <div className="flex flex-wrap justify-center gap-1">
-                      {c.verifiedSkills.map(s => <Badge key={s} variant="success">{s}</Badge>)}
+                      {c.verifiedSkills.length > 0
+                        ? c.verifiedSkills.map(s => <Badge key={s} variant="success">{s}</Badge>)
+                        : <span className="text-sm text-[var(--text-tertiary)]">—</span>
+                      }
                     </div>
                   </td>
                 ))}
@@ -107,11 +110,14 @@ export default function Compare() {
               <Row label="Assessments">
                 {compared.map(c => (
                   <td key={c.id} className="px-4 py-3 text-center">
-                    {c.assessmentScores?.map(a => (
-                      <div key={a.skill} className="text-xs mb-1">
-                        {a.skill}: <span className="font-[var(--font-mono)] font-medium">{a.score}%</span>
-                      </div>
-                    )) ?? <span className="text-sm text-[var(--text-tertiary)]">—</span>}
+                    {c.assessmentScores && c.assessmentScores.length > 0
+                      ? c.assessmentScores.map(a => (
+                          <div key={a.skill} className="text-xs mb-1">
+                            {a.skill}: <span className="font-[var(--font-mono)] font-medium">{a.score}%</span>
+                          </div>
+                        ))
+                      : <span className="text-sm text-[var(--text-tertiary)]">—</span>
+                    }
                   </td>
                 ))}
               </Row>
